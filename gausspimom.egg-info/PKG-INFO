@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: gausspimom
+Version: 0.1.0
+Summary: Gaussian PIMOM input generator
+Author: Ali Abou Taka
+Requires-Python: >=3.7
+Requires-Dist: prompt_toolkit
+Dynamic: author
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

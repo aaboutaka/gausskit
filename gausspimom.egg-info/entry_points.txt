@@ -1,0 +1,2 @@
+[console_scripts]
+gaussjob = gausspimom.cli:main
