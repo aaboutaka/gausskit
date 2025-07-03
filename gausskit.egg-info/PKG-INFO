@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: gausskit
+Version: 0.1.0
+Summary: Toolkit for generating and modifying Gaussian input files
+Author: Ali Abou Taka
+Author-email: Ali Abou Taka <abotaka.ali@gmail.com>
+License: MIT
+Project-URL: Homepage, https://github.com/abotaka/gausskit
+Project-URL: Repository, https://github.com/abotaka/gausskit
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+Requires-Dist: prompt_toolkit
+Dynamic: author
+Dynamic: requires-python

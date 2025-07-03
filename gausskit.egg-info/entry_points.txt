@@ -1,0 +1,2 @@
+[console_scripts]
+gausskit = gausskit.cli:main

@@ -1,6 +1,26 @@
 [build-system]
-requires = ["setuptools>=42"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "gausskit"
+version = "0.1.0"
+description = "Toolkit for generating and modifying Gaussian input files"
+authors = [
+    { name="Ali Abou Taka", email="abotaka.ali@gmail.com" }
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "prompt_toolkit"
+]
+
+[project.urls]
+Homepage = "https://github.com/abotaka/gausskit"
+Repository = "https://github.com/abotaka/gausskit"
+
+[project.scripts]
+gausskit = "gausskit.cli:main"
 
 

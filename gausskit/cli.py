@@ -4,24 +4,25 @@ from prompt_toolkit.completion import WordCompleter
 from .io import is_gaussian_terminated, extract_homo_lumo_indices
 from .utils import parse_swap_pairs
 from .builder import write_pimom_input
-
+import sys
 
 def main():
-    print("=" * 80)
-    print("🧪 Gaussian Job Manager — CLI Toolkit")
-    print("   Automates creation of Gaussian input files")
-    print("   Supports orbital swap for PIMOM excited-state jobs")
-    print("   Generates clean .com files from .xyz with route/footer info")
-    print("   Adds Link1 or separate stability job steps")
-    print("   Accepts .xyz formats with commas, spaces, or tabs, with/without atom indices")
-    print("-" * 80)
-    print("📦 Package: gaussjob")
-    print("👨‍💻 Author: Ali Abou Taka  |  🔗 https://github.com/abotaka/gaussjob")
-    print("🗒️  License: MIT")
-    print("📬 Contact: abotaka.ali@gmail.com")
-    print("=" * 80)
+    if '--about' in sys.argv:
+        print_about()
+        return
+    if '--help' in sys.argv:
+        print_help()
+        return
+    if '--version' in sys.argv:
+        print("GaussKit version 0.1.0")
+        return
 
-    from prompt_toolkit import prompt
+    print("=" * 70)
+    print("Welcome to GaussKit: Gaussian Input Automation Toolkit")
+    print("Author: Ali Abou Taka (aka Qathota)")
+    print("Type `gaussjob --about` for full details.")
+    print("=" * 70)
+
     choice = prompt("Choose mode: [1] PIMOM Swap  [2] Input Generator : ").strip()
     if choice == "2":
         from .generator import create_gaussian_input
@@ -29,6 +30,47 @@ def main():
     else:
         from .cli import run_pimom_cli
         run_pimom_cli()
+
+def print_about():
+    print("""
+🧪 GaussKit - Gaussian Input Generation & Orbital Manipulation Toolkit
+Author: Ali Abou Taka (aka Qathota) | GitHub: @aaboutaka
+Email: abotaka.ali@gmail.com
+
+Features:
+- PIMOM orbital swap .com file generator
+- Custom route line input with auto-complete
+- Flexible .xyz parsing (comma/tab/space/indexed)
+- Optional stability job via Link1 or separate file
+- Optional @footer basis support
+- Command-line interactive mode with validation
+
+Usage:
+    gaussjob             Launch the interactive CLI
+    gaussjob --about     Print this description
+    gaussjob --help      Show usage instructions
+    gaussjob --version   Show version number
+
+Project Repository:
+    https://github.com/aaboutaka/gausskit
+""")
+
+def print_help():
+    print("""
+Usage: gaussjob [--about | --help | --version]
+
+No arguments        Start interactive CLI
+--about             Show package overview, features, and author info
+--help              Show usage summary
+--version           Show installed version of GaussKit
+
+After launch:
+    [1] PIMOM Swap          → generate excited state input files
+    [2] Input Generator     → create ground/stability job inputs
+
+Documentation: https://github.com/aaboutaka/gausskit
+""")
+
 
 
 
