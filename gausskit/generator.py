@@ -1,4 +1,5 @@
 import os
+import re
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
 
@@ -65,7 +66,8 @@ def create_gaussian_input():
     charge = prompt("Enter total charge (default 0): ").strip() or "0"
     multiplicity = prompt("Enter multiplicity (default 1): ").strip() or "1"
 
-    xyz_file = prompt("Enter path to XYZ coordinates file: ").strip()
+    xyz_completer = WordCompleter([f for f in os.listdir() if f.endswith('.xyz')])
+    xyz_file = prompt("Enter path to XYZ coordinates file: ", completer=xyz_completer).strip()
     coords = read_xyz_file(xyz_file)
     if not coords:
         print("❌ No valid coordinates found.")
@@ -88,7 +90,8 @@ def create_gaussian_input():
         if basis:
             f.write(f"@{basis}\n")
 
-    print(f"\n✅ Input file created: {output_path}")
+#    print(f"\n✅ Input file created: {output_path}")
+
 
     # Extract functional only (e.g., b3lyp from b3lyp/6-31g(d))
     functional_match = re.search(r'([a-zA-Z0-9\-]+)(?=/)', route)
@@ -125,4 +128,239 @@ def create_gaussian_input():
             if basis:
                 f.write(f"@{basis}\n")
         print(f"✅ Stability job written to separate file: {stab_path}")
+
+    print(f"\n✅ Input file created: {output_path}")
+
+    while True:
+        again = prompt("➕ Generate another input using this .chk file? [y/N]: ").strip().lower()
+        if again != "y":
+            break
+
+        new_filename = prompt("Enter new output filename (without extension): ").strip()
+        if not new_filename:
+            print("❌ No filename provided. Aborting follow-up input.")
+            break
+
+        new_functional = prompt("Enter new functional (e.g., wb97xd): ").strip()
+        new_basis = prompt("Enter new basis set (e.g., def2tzvp): ").strip()
+        new_route = f"{new_functional}/{new_basis} guess=read geom=check"
+
+        footer = prompt("Enter optional basis set footer filename (or press ENTER to skip): ").strip()
+        if footer and not os.path.exists(footer):
+            print("⚠️ Footer file not found. Ignoring.")
+            footer = None
+
+        follow_path = new_filename + ".com"
+        with open(follow_path, "w") as f:
+            f.write(f"%oldchk={filename}.chk\n")
+            f.write(f"%chk={new_filename}.chk\n")
+            f.write(f"#p {new_route} int=superfinegrid scf=(fermi,novaracc)\n\n")
+            f.write(f"{title} (follow-up calculation)\n\n")
+            f.write(f"{charge} {multiplicity}\n\n\n")
+            if footer:
+                f.write(f"@{footer}\n")
+
+        print(f"✅ Follow-up input file created: {follow_path}")
+ 
+
+
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import WordCompleter, PathCompleter
+from gausskit.completions import tab_autocomplete_prompt, HybridCompleter
+
+def create_benchmark_inputs():
+    print("=" * 60)
+    print("Benchmark Input Generator: XYZ → .com for each functional/basis set")
+    print("=" * 60)
+
+    xyz_files = [f for f in os.listdir() if f.endswith(".xyz")]
+    file_completer = HybridCompleter([
+        WordCompleter(xyz_files),
+        PathCompleter(file_filter=lambda f: f.endswith(".xyz"))
+    ])
+
+    functional_completer = WordCompleter([
+        'HF', 'B3LYP', 'BLYP', 'PBE', 'PBE0', 'CAM-B3LYP', 'wB97X',
+        'wB97X-D', 'wB97X-D3', 'wB97M-V', 'M06', 'M06-2X', 'TPSSh', 'SCAN'
+    ], ignore_case=True)
+
+    basis_completer = WordCompleter([
+        'STO-3G', '3-21G', '6-31G', '6-31G(d)', '6-31+G(d,p)', '6-311G(d,p)',
+        'cc-pVDZ', 'cc-pVTZ', 'cc-pVQZ', 'aug-cc-pVDZ', 'aug-cc-pVTZ',
+        'def2-SVP', 'def2-TZVP', 'def2-TZVPP', 'def2-QZVP',
+        'gen', 'genecp'
+    ], ignore_case=True)
+
+    functionals = prompt("Enter functional(s) (comma-separated): ", completer=functional_completer).strip().split(",")
+    basis_sets = prompt("Enter basis set(s) (comma-separated): ", completer=basis_completer).strip().split(",")
+    charge = prompt("Enter charge: (default = 0)").strip() or "0"
+    multiplicity = prompt("Enter multiplicity: (default = 1) ").strip() or "1"
+    keywords = prompt("Enter route keywords (default: Opt Freq SCF=(fermi, novaracc) int=superfinegrid): ").strip()
+    if not keywords:
+        keywords = "Opt Freq SCF=(fermi, novaracc) int=superfinegrid"
+
+    basis_sets = [b.strip() for b in basis_sets if b.strip()]
+    needs_custom_basis = any(b.lower() in ("gen", "genecp") for b in basis_sets)
+    custom_basis_content = ""
+    if needs_custom_basis:
+        basis_file = tab_autocomplete_prompt("Enter custom basis set file (e.g., .gbs, .txt): ", completer=PathCompleter()).strip()
+        if not os.path.exists(basis_file):
+            print(f"❌ File {basis_file} not found.")
+            choice = prompt("Do you want to continue and reference it as @basisset? (y/n): ").strip().lower()
+            if not choice.startswith('y'):
+                print("⛔ Exiting.")
+                return
+            else:
+                print("⚠️ File will be referenced as @basisset. You must provide the file later.")
+                custom_basis_content = f"@{basis_file}\n"
+        else:
+            custom_basis_content = f"@{basis_file}\n"
+    
+
+    for xyz in xyz_files:
+        coords = read_xyz_file(xyz)
+        coords_str = "\n".join(coords)
+        molname = xyz.replace(".xyz", "")
+
+        for func in functionals:
+            for basis in basis_sets:
+                func_clean = func.strip().replace(" ", "").replace("(", "").replace(")", "").replace("+", "p").replace("-", "")
+                basis_clean = basis.strip().replace(" ", "").replace("(", "").replace(")", "").replace("+", "p").replace("-", "")
+                filename = f"{molname}_{func_clean}_{basis_clean}.com"
+                chkname = filename.replace(".com", ".chk")
+                stab_chkname = chkname.replace(".chk", "-stab.chk")
+
+                route = f"#P {func.strip()}/{basis.strip()} {keywords}"
+                stability_route = f"#P {func.strip()}/{basis.strip()} chkbasis Geom=AllCheck Guess=Read Stable=Opt"
+
+                com_content = f"""%Chk={chkname}
+{route}
+
+Benchmark calculation for {molname}
+
+{charge} {multiplicity}
+{coords_str}
+
+"""
+
+                if needs_custom_basis:
+                    com_content += f"{custom_basis_content.strip()}\n\n"
+
+                if "freq" in keywords.lower():
+                    com_content += f"""--Link1--
+%OldChk={chkname}
+%Chk={stab_chkname}
+{stability_route}
+
+"""
+                with open(filename, "w") as f:
+                    f.write(com_content)
+
+                print(f"✅ Generated: {filename}")
+
+
+
+def create_default_fc_input(gs_base: str, es_base: str) -> str:
+    """
+    Read gs_base.com and es_base.com, extract:
+      - oldchk  ← from es_base %chk=
+      - route   ← from es_base “#P …”
+      - charge, mult ← from es_base first “X Y” line
+    and write es_base_fc.com → es_base_fc.chk
+    Returns the FC base name (without .com).
+    """
+
+    def extract_chk(com_path):
+        with open(com_path) as f:
+            for L in f:
+                L = L.strip()
+                if L.lower().startswith('%chk='):
+                    return L.split('=',1)[1]
+        # fallback
+        return os.path.splitext(com_path)[0] + '.chk'
+
+    def extract_route(com_path):
+        with open(com_path) as f:
+            for L in f:
+                if L.lower().startswith('#p'):
+                    return L.strip()[2:].strip()
+        raise RuntimeError(f"No route line (#P) in {com_path}")
+
+    def extract_charge_mult(com_path):
+        with open(com_path) as f:
+            lines = [l.rstrip() for l in f]
+        # skip headers, find title then next nonblank = charge multiplicity
+        seen_title = False
+        for L in lines:
+            if not L.startswith(('%', '#')) and L.strip():
+                if not seen_title:
+                    seen_title = True
+                else:
+                    parts = L.split()
+                    if len(parts) >= 2:
+                        return parts[0], parts[1]
+        return "0", "1"
+
+    gs_com = gs_base + '.com'
+    es_com = es_base + '.com'
+
+    oldchk_GS = extract_chk(gs_com)
+    oldchk_ES = extract_chk(es_com)
+    route = extract_route(es_com)
+    charge, mult = extract_charge_mult(es_com)
+
+    fc_base = f"{es_base}_fc"
+    fc_com  = fc_base + '.com'
+    fc_chk  = fc_base + '.chk'
+
+    with open(fc_com, 'w') as out:
+        out.write(f"%oldchk={oldchk_GS}\n")
+        out.write(f"%chk={fc_chk}\n")
+        out.write(f"#P ChkBasis Freq=(ReadFC,FC,ReadFCHT) Geom=Checkpoint NOSYMM Guess=Read\n\n")
+        out.write(f"Franck–Condon Calculation: {es_base}\n\n")
+        out.write(f"{charge} {mult}\n\n")
+        out.write("Spectrum=(Broadening=Stick,Lower=-10000.0,Upper=40000.0) temperature=298.15\n\n")
+        out.write(f"{oldchk_ES}\n")
+    print(f"✅ Default FC input generated: {fc_com}")
+    return fc_base
+
+
+
+def write_pimom_input(base_log, alpha_swaps, beta_swaps, charge, multiplicity,
+                      method, footer=None, include_func_in_name=True, custom_oldchk=None):
+    base_name = os.path.splitext(base_log)[0]
+    oldchk = custom_oldchk if custom_oldchk else base_name + ".chk"
+
+    suffix = ""
+    if alpha_swaps:
+        suffix += "-a" + "-".join("_".join(pair) for pair in alpha_swaps)
+    if beta_swaps:
+        suffix += "-b" + "-".join("_".join(pair) for pair in beta_swaps)
+    if include_func_in_name:
+        suffix += f"-{method}"
+
+    outchk = base_name + suffix + ".chk"
+    comfile = base_name + suffix + ".com"
+
+    with open(comfile, "w") as f:
+        f.write(f"%oldchk={oldchk}\n")
+        f.write(f"%chk={outchk}\n")
+        f.write(f"#p {method} scf=(pimom,fermi,novaracc) integral=SuperFineGrid guess=(alter,read) geom=check chkbasis int=noxctest\n\n")
+        f.write("Title Card Required\n\n")
+        f.write(f"{charge} {multiplicity}\n\n")
+
+        for pair in alpha_swaps:
+            f.write(" ".join(pair) + " ! alpha swap\n")
+        if alpha_swaps and beta_swaps:
+            f.write("\n")
+        for pair in beta_swaps:
+            f.write(" ".join(pair) + " ! beta swap\n")
+
+        f.write("\n\n")
+        if footer:
+            f.write(f"@{footer}\n")
+
+    print(f"\n✅ Created file: {comfile}")
+    print(f"   → Using %oldchk: {oldchk}")
+    print(f"   → Output %chk  : {outchk}")
 
