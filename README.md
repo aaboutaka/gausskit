@@ -2,20 +2,25 @@
 
 **GaussKit** is a general-purpose Python toolkit for building and automating Gaussian quantum chemistry workflows.
 
-It helps you generate `.com` input files, perform orbital permutations for PIMOM excited-state calculations, add stability jobs, and manipulate Gaussian inputs with ease.
+It helps you generate `.com` input files, perform orbital permutations for PIMOM excited-state calculations, add stability jobs, generate Franck–Condon spectra inputs, and manipulate Gaussian inputs with ease.
 
 ---
 
 ## ⚙️ Features
 
-- ✅ CLI input generator for ground, excited, and stability jobs
-- ✅ PIMOM orbital swap builder (HOMO–n ↔ LUMO)
-- ✅ Optional `Link1` or separate `.com` for stability jobs
-- ✅ Reads `.xyz` files with flexible formats (tab, space, comma, indexed)
-- ✅ Smart extraction of functional and basis from route string
-- ✅ Easy route line completions and presets
-- ✅ Optional custom basis set footer support
-- ✅ Interactive prompts with validation
+* ✅ CLI input generator for ground, excited, and stability jobs
+* ✅ PIMOM orbital swap builder (HOMO–n ↔ LUMO)
+* ✅ Optional `Link1` or separate `.com` for stability jobs
+* ✅ Franck–Condon input generator with full control over method, functional, temperature
+* ✅ Reads `.xyz` files with flexible formats (tab, space, comma, indexed)
+* ✅ Smart extraction of functional and basis from route string or `.com` content
+* ✅ Functional auto-detection for MAT/SP file generation
+* ✅ Interactive route builder and validation
+* ✅ Optional custom basis set footer support
+* ✅ Auto-permutation of α/β orbital pairs (e.g. HOMO–1 → LUMO)
+* ✅ Job scheduler for GS → ES → FC workflows
+* ✅ Contamination analyzer with ideal ⟨S²⟩ value
+* ✅ Auto-generated filenames from log or .com file context
 
 ---
 
@@ -25,7 +30,7 @@ It helps you generate `.com` input files, perform orbital permutations for PIMOM
 git clone https://github.com/aaboutaka/gausskit.git
 cd gausskit
 pip install -e .
-````
+```
 
 This installs the command:
 
@@ -43,10 +48,15 @@ Launch the tool with:
 gausskit
 ```
 
-Then choose one of the modes:
+Then choose a mode:
 
 ```
-Choose mode: [1] PIMOM Swap  [2] Input Generator
+Choose mode:
+ [1] PIMOM Swap Generator
+ [2] Input Generator
+ [3] Franck–Condon Input Builder
+ [4] Scheduler
+ [5] Log Analyzer
 ```
 
 ---
@@ -56,60 +66,93 @@ Choose mode: [1] PIMOM Swap  [2] Input Generator
 For excited-state continuation after TDDFT:
 
 * Extracts HOMO/LUMO orbital indices from `.log`
-* Prompts for alpha/beta swaps (manual or auto)
+* Prompts for α/β swaps (manual or auto)
 * Generates `.com` files for each permutation
-* Supports HOMO–1, HOMO–2, etc.
 * Optionally includes method name in filename
-
-Example:
-
-```text
-77 78  (alpha swap)
-81 82  (beta swap)
-```
+* Ensures correct HOMO/LUMO pair formatting (e.g. 55 56)
 
 ---
 
 ## 📘 Mode 2 – Gaussian Input Generator
 
-For generating ground- or excited-state inputs:
+For ground/excited jobs:
 
 * Prompts for:
 
   * Output filename
   * Route line (with completion)
-  * Title
   * Charge and multiplicity
-  * Path to `.xyz`
-  * Optional `@basis_footer.gbs`
-  * Optional stability job:
+  * Title
+  * `.xyz` coordinates
+  * Optional basis footer
+* Optionally chains a stability job (`none`, `link1`, `separate`)
+* Supports follow-up calculation using previous `.chk` file
 
-    * `none`: no extra job
-    * `link1`: append to same `.com`
-    * `separate`: write to `filename-stab.com`
+---
+
+## 📘 Mode 3 – Franck–Condon Input Generator
+
+For spectrum simulations:
+
+* Asks for:
+
+  * Initial and final `.chk` files
+  * Functional
+  * Method (e.g. `VerticalHessian`, `AdiabaticHessian`, `AdiabaticShift`, `VerticalGradient`)
+  * Temperature
+  * Title, charge, multiplicity
+* Options:
+
+  * Include `TimeIndependent`
+  * Include `Output=Matrix=JK`
+* Produces well-formatted FC `.com` input
+
+---
+
+## 📘 Mode 4 – GS/ES/FC Job Scheduler
+
+* Automatically submits:
+
+  * Ground-state job
+  * Excited-state (PIMOM) job
+  * Franck–Condon job (after GS & ES complete)
+* Checks for normal termination
+* Tracks SLURM job IDs
+* Runs in background
+* Supports commands like `--status` and `--stop`
+
+---
+
+## 📘 Mode 5 – Log Analyzer
+
+* Parses `.log` or `.out` files
+* Reports:
+
+  * HOMO/LUMO indices
+  * Final SCF energy
+  * ⟨S²⟩ expectation value
+  * Spring contamination with deviation from ideal ⟨S²⟩
+* Color-coded warnings for high spin contamination
+
+---
+
+## 📘 MAT File Generator
+
+* Automatically detects functional used in `.com` file
+* Creates `-MAT.com` for single point read-from-checkpoint jobs
+* Warns if functional is missing or can't be extracted
+* Appends `-MAT.chk` checkpoint file
 
 ---
 
 ## 📦 XYZ Format Support
 
-All the following work:
+Supports tab, space, or comma-separated formats, with or without atomic numbers:
 
-```
+```xyz
 O 0.000000 0.000000 0.1173
 H 0.000000 0.757160 -0.4692
 H 0.000000 -0.757160 -0.4692
-```
-
-```
-O,0,0.000000,0.000000,0.1173
-H,0,0.000000,0.757160,-0.4692
-H,0,0.000000,-0.757160,-0.4692
-```
-
-```
-O	0.000000	0.000000	0.1173
-H	0.000000	0.757160	-0.4692
-H	0.000000	-0.757160	-0.4692
 ```
 
 ---
@@ -142,16 +185,21 @@ H2O Stability Check
 0 1
 ```
 
-**Stability Job (Separate)**
+**Franck–Condon**
 
 ```text
-%oldchk=mycalc.chk
-%chk=mycalc-stab.chk
-#p b3lyp guess=read stable=opt chkbasis geom=check
+%oldchk=H2-GS.chk
+%chk=H2-ES_fc.chk
+#p wb97xd ChkBasis Freq=(ReadFC,FC,ReadFCHT) geom=check guess=read
 
-H2O Stability Check
+Franck–Condon spectrum
 
 0 1
+Spectrum=(Broadening=Stick,Lower=-10000.0,Upper=40000.0) Temperature=5.0
+
+H2-ES.chk
+TimeIndependent
+Output=Matrix=JK
 ```
 
 ---
@@ -169,13 +217,11 @@ Also known as: **Qathota** 🧠
 ## 🪪 License
 
 MIT License.
-Feel free to use, modify, and contribute.
+Use, modify, and contribute freely.
 
 ---
 
 ## ✨ Citation
-
-If you use this package in your research:
 
 > Ali Abou Taka. *GaussKit: A Python toolkit for Gaussian input generation and orbital manipulation*. GitHub repository: [https://github.com/aaboutaka/gausskit](https://github.com/aaboutaka/gausskit)
 
@@ -189,3 +235,6 @@ If you use this package in your research:
 * GaussView-style coordinate visualization
 * Automatic ONIOM model builders
 * Conversion between XYZ ↔ Gaussian formats
+
+---
+
