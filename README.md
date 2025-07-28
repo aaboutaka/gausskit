@@ -119,29 +119,21 @@ For spectrum simulations:
 * Checks for normal termination
 * Tracks SLURM job IDs
 * Runs in background
-* Supports commands like `--status` and `--stop`
 
 ---
 
 ## 📘 Mode 5 – Log Analyzer
 
-* Parses `.log` or `.out` files
+* Parses `.log` files
 * Reports:
 
-  * HOMO/LUMO indices
+  * HOMO/LUMO indices and energy gaps
   * Final SCF energy
   * ⟨S²⟩ expectation value
+  * Type of calculations
+  * print out frequencies and check if there is any imaginary frequency
   * Spring contamination with deviation from ideal ⟨S²⟩
 * Color-coded warnings for high spin contamination
-
----
-
-## 📘 MAT File Generator
-
-* Automatically detects functional used in `.com` file
-* Creates `-MAT.com` for single point read-from-checkpoint jobs
-* Warns if functional is missing or can't be extracted
-* Appends `-MAT.chk` checkpoint file
 
 ---
 
@@ -207,8 +199,6 @@ Output=Matrix=JK
 ## 👨‍🔬 Author
 
 **Ali Abou Taka**
-Also known as: **Qathota** 🧠
-📍 Dearborn, Michigan, USA
 📧 [abotaka.ali@gmail.com](mailto:abotaka.ali@gmail.com)
 🐙 GitHub: [@aaboutaka](https://github.com/aaboutaka)
 
@@ -232,8 +222,6 @@ Use, modify, and contribute freely.
 * PES/IRC pathway builders
 * Gaussian output file parsing
 * Conformer generation & batch scan
-* GaussView-style coordinate visualization
-* Automatic ONIOM model builders
 * Conversion between XYZ ↔ Gaussian formats
 
 ---
