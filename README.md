@@ -8,21 +8,41 @@ It helps you generate `.com` input files, perform orbital permutations for PIMOM
 
 ## ⚙️ Features
 
-* ✅ CLI input generator for ground, excited, and stability jobs
-* ✅ PIMOM orbital swap builder (HOMO–n ↔ LUMO)
-* ✅ Optional `Link1` or separate `.com` for stability jobs
-* ✅ Franck–Condon input generator with full control over method, functional, temperature
-* ✅ Reads `.xyz` files with flexible formats (tab, space, comma, indexed)
-* ✅ Smart extraction of functional and basis from route string or `.com` content
-* ✅ Functional auto-detection for MAT/SP file generation
-* ✅ Interactive route builder and validation
-* ✅ Optional custom basis set footer support
-* ✅ Auto-permutation of α/β orbital pairs (e.g. HOMO–1 → LUMO)
-* ✅ Job scheduler for GS → ES → FC workflows
-* ✅ Contamination analyzer with ideal ⟨S²⟩ value
-* ✅ Auto-generated filenames from log or .com file context
+* ✅ **Interactive CLI with Autocompletion**
+  Smart prompts with route/basis/filename completion.
+  
+* ✅ **PIMOM Swap Generator**
+  Swap occupied and virtual orbitals (α/β) for excited-state PIMOM jobs.
+
+* ✅ **Input Generator**
+  Build Gaussian `.com` files with route line, title, charge, multiplicity, XYZ input, and optional basis footer. Supports stability jobs (`none`, `link1`, `separate`).
+
+* ✅ **Franck–Condon Input Generator**
+  Generate FC inputs with method selection (e.g. `VerticalHessian`), custom functional, temperature, `TimeIndependent`, and matrix options.
+
+* ✅ **Job Scheduler**
+  Automate GS → ES → FC workflows with SLURM submission, dependency checking, job ID tracking, and emailing options when jobs are completed.
+
+* ✅ **Benchmark Input Generator**
+  Create multiple Gaussian inputs from combinations of functional and basis sets using `.xyz` geometry.
+
+* ✅ **Log Analyzer**
+  Extract and report SCF energy, HOMO/LUMO indices, ⟨S²⟩ value, and more.
+
+* ✅ **Vibronic Summary Tool**
+  Parse Franck–Condon outputs and generate stick/blurred spectra with optional experimental overlay.
+
+* ✅ **Custom Basis Set Footer Support**
+  Include external basis definitions with `@file.gbs`.
+
+* ✅ **Flexible XYZ Parser**
+  Accepts tab/space/comma-separated formats.
+
+* ✅ **Auto-generated Filenames**
+  File names and checkpoints inferred from context to avoid overwrites and confusion.
 
 ---
+
 
 ## 🔧 Installation
 
