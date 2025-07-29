@@ -72,24 +72,27 @@ Then choose a mode:
 
 ```
 Choose mode:
- [1] PIMOM Swap Generator
- [2] Input Generator
- [3] Franck–Condon Input Builder
- [4] Scheduler
- [5] Log Analyzer
+[0] Exit
+[1] PIMOM Swap
+[2] Input Generator
+[3] Franck–Condon Input Generator
+[4] Job Scheduler
+[5] Benchmark Input Generator
+[6] Log Analyzer CLI
+[7] Vibronic Summary Tool
 ```
 
 ---
 
 ## 📘 Mode 1 – PIMOM Swap Generator
 
-For excited-state continuation after TDDFT:
+For excited-state calculations:
 
 * Extracts HOMO/LUMO orbital indices from `.log`
 * Prompts for α/β swaps (manual or auto)
 * Generates `.com` files for each permutation
 * Optionally includes method name in filename
-* Ensures correct HOMO/LUMO pair formatting (e.g. 55 56)
+* Ensures correct HOMO/LUMO pair formatting
 
 ---
 
@@ -139,7 +142,7 @@ For spectrum simulations:
 * Checks for normal termination
 * Tracks SLURM job IDs
 * Runs in background
-
+* optional emailing when completed
 ---
 
 ## 📘 Mode 5 – Log Analyzer
@@ -207,7 +210,7 @@ H2O Stability Check
 Franck–Condon spectrum
 
 0 1
-Spectrum=(Broadening=Stick,Lower=-10000.0,Upper=40000.0) Temperature=5.0
+Method=VerticalHessian Spectrum=(Broadening=Stick,Lower=-10000.0,Upper=40000.0) Temperature=5.0
 
 H2-ES.chk
 TimeIndependent
