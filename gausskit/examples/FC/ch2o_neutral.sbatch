@@ -23,4 +23,4 @@ gdv -m=92GB -p=56 < ch2o_neutral.com >& ch2o_neutral.log
 # Clean up
 rm -rf $My_Scratch
 
-# Created at 2025-07-30 07:40:08
+# Created at 2025-07-30 08:01:48
