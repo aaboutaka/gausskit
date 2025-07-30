@@ -1,0 +1,24 @@
+ Ground .com: ch2o_anion
+ Excited .com: ch2o_neutral
+ FC .com: ch2o_neutral_fc
+✅ Submitted ch2o_anion.com → Job ID 1561491 (partition=test)
+⚠️ No Job ID parsed from output:
+
+⚠️ No Job ID returned on 'test' — partition probably full.
+⏳ Waiting 10s before retrying submissions…
+⚠️ No Job ID parsed from output:
+
+⚠️ No Job ID returned on 'test' — partition probably full.
+⏳ Waiting 10s before retrying submissions…
+✅ Submitted ch2o_neutral.com → Job ID 1561492 (partition=test)
+⏳ Waiting for GS and ES to finish...
+⏳ Waiting for GS …
+✅ GS done.
+⏳ Waiting for ES …
+✅ ES done.
+✅ Submitted ch2o_neutral_fc.com → Job ID 1561493 (partition=test)
+⏳ Waiting for FC to finish...
+⏳ Waiting for FC …
+✅ FC done.
+✅ Job chain complete.
+📧 Email sent to abotaka.ali@gmail.com

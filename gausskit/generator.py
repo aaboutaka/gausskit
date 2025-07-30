@@ -2,6 +2,8 @@ import os
 import re
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.completion import WordCompleter, PathCompleter
+from gausskit.completions import tab_autocomplete_prompt, HybridCompleter
 
 import re
 
@@ -163,10 +165,30 @@ def create_gaussian_input():
         print(f"✅ Follow-up input file created: {follow_path}")
  
 
+def smart_split_basis_sets(basis_input):
+    tokens = []
+    current = ''
+    depth = 0
+    for char in basis_input:
+        if char == ',' and depth == 0:
+            if current.strip():
+                tokens.append(current.strip())
+                current = ''
+        else:
+            if char == '(':
+                depth += 1
+            elif char == ')':
+                depth -= 1
+            current += char
+    if current.strip():
+        tokens.append(current.strip())
+    return tokens
 
-from prompt_toolkit import prompt
-from prompt_toolkit.completion import WordCompleter, PathCompleter
-from gausskit.completions import tab_autocomplete_prompt, HybridCompleter
+
+def clean_label(s):
+    # Replace '+' with 'p', remove '-', '(', ')', ',' and all whitespace
+    return re.sub(r'[,\s\-\(\)]', '', s.replace('+', 'p'))
+
 
 def create_benchmark_inputs():
     print("=" * 60)
@@ -181,7 +203,7 @@ def create_benchmark_inputs():
 
     functional_completer = WordCompleter([
         'HF', 'B3LYP', 'BLYP', 'PBE', 'PBE0', 'CAM-B3LYP', 'wB97X',
-        'wB97X-D', 'wB97X-D3', 'wB97M-V', 'M06', 'M06-2X', 'TPSSh', 'SCAN'
+        'wB97XD', 'M06', 'M062X', 'TPSSh', 'SCAN'
     ], ignore_case=True)
 
     basis_completer = WordCompleter([
@@ -192,7 +214,9 @@ def create_benchmark_inputs():
     ], ignore_case=True)
 
     functionals = prompt("Enter functional(s) (comma-separated): ", completer=functional_completer).strip().split(",")
-    basis_sets = prompt("Enter basis set(s) (comma-separated): ", completer=basis_completer).strip().split(",")
+#    basis_sets = prompt("Enter basis set(s) (comma-separated): ", completer=basis_completer).strip()
+    raw_basis_input = prompt("Enter basis set(s) (e.g. 6-31G, 6-31+G(d,p), def2-TZVP): ", completer=basis_completer).strip()
+    basis_sets = smart_split_basis_sets(raw_basis_input)
     charge = prompt("Enter charge: (default = 0)").strip() or "0"
     multiplicity = prompt("Enter multiplicity: (default = 1) ").strip() or "1"
     keywords = prompt("Enter route keywords (default: Opt Freq SCF=(fermi, novaracc) int=superfinegrid): ").strip()
@@ -224,8 +248,10 @@ def create_benchmark_inputs():
 
         for func in functionals:
             for basis in basis_sets:
-                func_clean = func.strip().replace(" ", "").replace("(", "").replace(")", "").replace("+", "p").replace("-", "")
-                basis_clean = basis.strip().replace(" ", "").replace("(", "").replace(")", "").replace("+", "p").replace("-", "")
+                #func_clean = func.strip().replace(" ", "").replace("(", "").replace(")", "").replace("+", "p").replace("-", "")
+                #basis_clean = basis.strip().replace(" ", "").replace("(", "").replace(")", "").replace("+", "p").replace("-", "")
+                func_clean = clean_label(func)
+                basis_clean = clean_label(basis)
                 filename = f"{molname}_{func_clean}_{basis_clean}.com"
                 chkname = filename.replace(".com", ".chk")
                 stab_chkname = chkname.replace(".chk", "-stab.chk")
@@ -251,6 +277,8 @@ Benchmark calculation for {molname}
 %OldChk={chkname}
 %Chk={stab_chkname}
 {stability_route}
+
+
 
 """
                 with open(filename, "w") as f:

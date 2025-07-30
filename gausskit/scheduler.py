@@ -1,6 +1,6 @@
 # gausskit/scheduler.py
 
-import os
+import os, re
 import sys
 import time
 import subprocess
@@ -35,7 +35,7 @@ def daemonize(logfile="gausskit-scheduler.log"):
 
 class GaussianJobScheduler:
     """
-    Orchestrates submission of Gaussian (.com) jobs via Hgbatch:
+    Orchestrates submission of Gaussian (.com) jobs via submit_cmd:
       - Chain mode (GS→ES→FC)
       - Single-job mode
       - Batch mode (all .com without .log)
@@ -48,7 +48,8 @@ class GaussianJobScheduler:
         gs_input,
         es_input,
         fc_input,
-        poll_interval=60,
+        poll_interval=10,
+        submit_cmd="Hgbatch",
         nproc=56,
         partition="medium",
         time_limit="23:50:00",
@@ -71,6 +72,7 @@ class GaussianJobScheduler:
         self.partition = partition
         self.time_limit = time_limit
         self.gdv = gdv
+        self.submit_cmd = submit_cmd
 
         # --- email notification settings ---
         self.email_notify = email_notify
@@ -133,7 +135,7 @@ class GaussianJobScheduler:
 
     def submit_job(self, input_base):
         """
-        Submit `input_base`.com via Hgbatch, retrying across partitions until
+        Submit `input_base`.com via submit_cmd, retrying across partitions until
         we get a numeric Job ID (or indefinitely if wait_for_slot=True).
         Returns the Job ID string, or None if the submission itself fails.
         """
@@ -164,18 +166,38 @@ class GaussianJobScheduler:
                         print(f"⚠️ Primary '{part}' full ({cnt}/{self.max_primary}), skipping.")
                         continue
 
-                cmd = [
-                    "Hgbatch",
-                    "-n",
-                    str(self.nproc),
-                    "-p",
-                    part,
-                    "-t",
-                    self.time_limit,
-                    "--gdv",
-                    self.gdv,
-                    com,
-                ]
+                if self.submit_cmd.lower() == "hgbatch":
+                    cmd = [
+                        "Hgbatch",
+                        "-n", str(self.nproc),
+                        "-p", part,
+                        "-t", self.time_limit,
+                        "--gdv", self.gdv,
+                        com,
+                    ]
+                elif self.submit_cmd.lower() == "gsub":
+                    cmd = [
+                        "gsub",
+                        "-n", str(self.nproc),
+                        "-p", part,
+                        "-t", self.time_limit,
+                        com,
+                    ]
+                else:  # direct g16 call or fallback
+                    cmd = [self.submit_cmd, com]
+                
+        #        cmd = [
+        #            "Hgbatch",
+        #            "-n",
+        #            str(self.nproc),
+        #            "-p",
+        #            part,
+        #            "-t",
+        #            self.time_limit,
+        #            "--gdv",
+        #            self.gdv,
+        #            com,
+        #        ]
                 result = subprocess.run(cmd, capture_output=True, text=True)
 
                 if result.returncode != 0:
@@ -184,8 +206,14 @@ class GaussianJobScheduler:
                     return None
 
                 # try to parse the last token as an integer Job ID
-                out_tokens = result.stdout.strip().split()
-                jobid = out_tokens[-1] if out_tokens and out_tokens[-1].isdigit() else None
+                #out_tokens = result.stdout.strip().split()
+                #jobid = out_tokens[-1] if out_tokens and out_tokens[-1].isdigit() else None
+                match = re.search(r"\b(\d+)\b", result.stdout) 
+                jobid = match.group(1) if match else None
+
+                if not jobid:
+                    print(f"⚠️ No Job ID parsed from output:\n{result.stdout.strip()}")
+
 
                 if jobid:
                     print(f"✅ Submitted {com} → Job ID {jobid} (partition={part})")
@@ -219,42 +247,116 @@ class GaussianJobScheduler:
             with open(path, "r", errors="ignore") as f:
                 tail = f.readlines()[-lines:]
         return any(keyword in L for L in tail[-lines:])
+    
+    def log_terminated_successfully(self, base):
+        path = f"{base}.log"
+        if not os.path.exists(path):
+            return False
+        try:
+            with open(path, "r", errors="ignore") as f:
+                lines = f.readlines()[-100:]
+        except:
+            return False
+    
+        for line in lines:
+            if "Normal termination" in line:
+                return True
+            if "Error termination" in line or "termination via Lnk1e" in line:
+                print(f"❌ ERROR termination detected in {base}.log")
+                return False
+                
+        return False
 
+    
+ 
     def wait_for(self, label, checks):
         """
-        Block until **all** (base, keyword) in `checks` pass check_log_tail.
+        Block until **all** (base, keyword) in `checks` are satisfied in the tail of their log file.
+        If any log shows 'Error termination', abort immediately.
         """
         print(f"⏳ Waiting for {label} …")
         while True:
-            if all(self.check_log_tail(base, kw) for base, kw in checks):
+            all_done = True
+            for base, keyword in checks:
+                log_path = f"{base}.log"
+                if not os.path.exists(log_path):
+                    all_done = False
+                    continue
+    
+                # Check for error termination first
+                try:
+                    with open(log_path, "rb") as f:
+                        f.seek(-4096, os.SEEK_END)
+                        tail = f.read().decode(errors="ignore").splitlines()
+                except OSError:
+                    with open(log_path, "r", errors="ignore") as f:
+                        tail = f.readlines()[-100:]
+    
+                for line in tail:
+                    if "Error termination" in line:
+                        print(f"❌ ERROR termination detected in {base}.log")
+                        self.send_email(
+                            subject="❌ GaussKit: Job Failed",
+                            body=f"Failure detected.\nCheck {base}.log.",
+                            tail_log=f"{base}.log"
+                        )
+#                        self.send_email("GaussKit: Job Chain Failed ❌", f"Failure detected.\nCheck {base}.log.")
+
+                        sys.exit(1)  # exit the program
+    
+                if not any(keyword in line for line in tail):
+                    all_done = False
+    
+            if all_done:
                 print(f"✅ {label} done.")
                 return
+    
             time.sleep(self.poll_interval)
-
-    def send_email(self):
+    
+    
+    def send_email(self, subject=None, body=None, tail_log=None):
         """
-        If email_notify=True, send a summary listing each submitted job
-        by filename and Job ID.
+        Send a summary email or a failure notice with optional log tail.
         """
-        if not (self.email_notify and self.email_address and self.submitted_jobs):
+        if not self.email_notify or not self.email_address:
             return
-
+    
         msg = EmailMessage()
-        msg["Subject"] = "✅ GaussKit: Gaussian Jobs Completed"
+        msg["Subject"] = subject or "✅ GaussKit: Gaussian Jobs Completed"
         msg["From"] = self.email_address
         msg["To"] = self.email_address
-
-        body = ["Your Gaussian jobs have completed:"]
-        for name, jid in self.submitted_jobs:
-            body.append(f"  • {name}.com → Job ID: {jid}")
-        msg.set_content("\n".join(body))
-
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context()) as s:
-            s.login(self.email_address, self.email_password)
-            s.send_message(msg)
-
-        print(f"📧 Email sent to {self.email_address}")
-
+    
+        body_lines = []
+    
+        # Default success summary
+        if not subject and not body:
+            body_lines.append("Your Gaussian jobs have completed:")
+            for name, jid in self.submitted_jobs:
+                body_lines.append(f"  • {name}.com → Job ID: {jid}")
+        else:
+            body_lines.append(body or "(No message provided)")
+    
+        # Append log tail if requested
+        if tail_log and os.path.exists(tail_log):
+            body_lines.append("\n⏬ Tail of log file:")
+            try:
+                with open(tail_log, 'r', errors='ignore') as f:
+                    tail = f.readlines()[-40:]  # adjust lines if needed
+                    body_lines.extend(["    " + line.rstrip() for line in tail])
+            except Exception as e:
+                body_lines.append(f"(Failed to read log tail: {e})")
+    
+        msg.set_content("\n".join(body_lines))
+    
+        try:
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context()) as s:
+                s.login(self.email_address, self.email_password)
+                s.send_message(msg)
+            print(f"📧 Email sent to {self.email_address}")
+        except Exception as e:
+            print(f"⚠️ Failed to send email: {e}")
+          
+            
     def run_chain(self):
         print(f" Ground .com: {self.gs_input}")
         print(f" Excited .com: {self.es_input}")
@@ -268,10 +370,32 @@ class GaussianJobScheduler:
             print("❌ One or both submissions failed.")
             return
     
-        # Wait for both GS and ES to complete
+        # Wait for GS and ES
         print("⏳ Waiting for GS and ES to finish...")
         self.wait_for("GS", [(self.gs_input, "Normal termination")])
         self.wait_for("ES", [(self.es_input, "Normal termination")])
+    
+        # Check GS
+        gs_log = f"{self.gs_input}.log"
+        if not self.log_terminated_successfully(self.gs_input):
+            self.send_email(
+                subject="❌ GaussKit: GS Job Failed",
+                body=f"Failure detected in GS job: {gs_log}",
+                tail_log=gs_log
+            )
+            print("❌ Halting chain due to GS failure.")
+            return
+    
+        # Check ES
+        es_log = f"{self.es_input}.log"
+        if not self.log_terminated_successfully(self.es_input):
+            self.send_email(
+                subject="❌ GaussKit: ES Job Failed",
+                body=f"Failure detected in ES job: {es_log}",
+                tail_log=es_log
+            )
+            print("❌ Halting chain due to ES failure.")
+            return
     
         # Submit FC job
         fid = self.submit_job(self.fc_input)
@@ -282,8 +406,113 @@ class GaussianJobScheduler:
         print("⏳ Waiting for FC to finish...")
         self.wait_for("FC", [(self.fc_input, "Normal termination")])
     
-        print("✅ Job chain complete.")
+        # Check FC
+        fc_log = f"{self.fc_input}.log"
+        if not self.log_terminated_successfully(self.fc_input):
+            self.send_email(
+                subject="❌ GaussKit: FC Job Failed",
+                body=f"Failure detected in FC job: {fc_log}",
+                tail_log=fc_log
+            )
+            print("❌ FC job failed.")
+            return
     
+        # All successful
+        print("✅ Job chain complete.")
+        self.send_email()
+    
+    
+#    def run_chain(self):
+#        print(f" Ground .com: {self.gs_input}")
+#        print(f" Excited .com: {self.es_input}")
+#        print(f" FC .com: {self.fc_input}")
+#    
+#        # Submit GS and ES jobs
+#        gid = self.submit_job(self.gs_input)
+#        eid = self.submit_job(self.es_input)
+#    
+#        if not gid or not eid:
+#            print("❌ One or both submissions failed.")
+#            return
+#    
+#        # Define termination patterns
+#        success_tag = "Normal termination"
+#        fail_tags = [
+#            "Error termination",
+#            "Link1:  fatal error",
+#            "Erroneous write",
+#            "l9999.exe",
+#        ]
+#    
+#    
+#        def check_termination(logfile, label="Job"):
+#            if not os.path.exists(logfile):
+#                print(f"❌ {label} log file not found: {logfile}")
+#                return False
+#        
+#            with open(logfile, 'r', encoding='utf-8', errors='ignore') as f:
+#                content = f.read().lower()  # lowercase for case-insensitive matching
+#        
+#            success_tag = "normal termination"
+#            fail_tags = [
+#                "error termination",
+#                "error termination via",
+#                "link1:  fatal error",
+#                "erroneous write",
+#                "l9999.exe",
+#                "ntrerr",
+#                "galloc:  could not allocate",
+#                "problem in reading the checkpoint file",
+#                "segmentation violation",
+#                "l1.exe"
+#            ]
+#        
+#            if success_tag in content:
+#                return True
+#        
+#            for tag in fail_tags:
+#                if tag in content:
+#                    print(f"❌ {label} failed — detected error pattern: '{tag}'")
+#                    return False
+#        
+#            print(f"⚠️ {label} did not terminate normally and no specific error was found.")
+#            return False
+#        
+#        # Wait for GS and ES
+#        print("⏳ Waiting for GS and ES to finish...")
+#        self.wait_for("GS", [(self.gs_input, "Normal termination")])
+#        self.wait_for("ES", [(self.es_input, "Normal termination")])
+# 
+#        if not check_termination(f"{self.gs_input}.log", "GS"):
+#            self.send_email("GaussKit: Job Chain Failed ❌", f"Failure detected in GS.\nCheck {self.gs_input}.log")
+#            print("❌ Halting chain due to GS failure.")
+#            return
+#
+#        if  not check_termination(f"{self.es_input}.log", "ES"):
+#            self.send_email("GaussKit: Job Chain Failed ❌", f"Failure detected in ES.\nCheck {self.es_input}.log.")
+#            print("❌ Halting chain due to ES failure.")
+#            return
+#
+#    
+#        # Submit FC job
+#        fid = self.submit_job(self.fc_input)
+#        if not fid:
+#            print("❌ FC submission failed.")
+#            return
+#    
+#        print("⏳ Waiting for FC to finish...")
+#        self.wait_for("FC", [(self.fc_input, "Normal termination")])
+# 
+#        if not check_termination(f"{self.fc_input}.log", "FC"):
+#            self.send_email("GaussKit: FC Job Failed ❌", f"Failure detected in FC log file: {self.fc_input}.log.")
+#            print("❌ FC job failed.")
+#            return
+#    
+#        print("✅ Job chain complete.")
+#        self.send_email("GaussKit: Job Chain Complete ✅", "All jobs (GS, ES, FC) completed successfully.")
+
+    
+
     
     def run_single(self, single_base):
         """Submit exactly one .com and wait for Normal termination."""
@@ -372,6 +601,11 @@ def run_job_scheduler():
         ans2 = prompt("Wait for slot if full? (y/n) [default: y]: ").strip().lower() or "y"
         wait_slot = ans2.startswith("y")
 
+    submit_cmd = prompt("Submission command (Hgbatch/gsub/g16) [default: Hgbatch]: ").strip() or "Hgbatch"
+    nproc = prompt("Number of processors [default: 56]: ").strip() or "56"
+    time_limit = prompt("Time limit (HH:MM:SS) [default: 23:50:00]: ").strip() or "23:50:00"
+
+
     # Email?
     ans = prompt("Email upon completion? (y/n) [default: n]: ").strip().lower() or "n"
     email = ans.startswith("y")
@@ -398,15 +632,15 @@ def run_job_scheduler():
     if bg and not daemonize():
         print("🚀 Scheduler is now running in background (see gausskit-scheduler.log).")
         return
-
+    
     sched = GaussianJobScheduler(
         gs_input=gs,
         es_input=es,
         fc_input=fc,
-        poll_interval=60,
-        nproc=56,
+        poll_interval=10,
+        nproc=int(nproc),
         partition="medium",
-        time_limit="23:50:00",
+        time_limit=time_limit,
         gdv="gdvj30+",
         email_notify=email,
         email_address=e_addr,
@@ -416,6 +650,26 @@ def run_job_scheduler():
         max_primary=maxp,
         fallback_part=fallback,
         wait_for_slot=wait_slot,
+        submit_cmd=submit_cmd,
     )
+    
+#    sched = GaussianJobScheduler(
+#        gs_input=gs,
+#        es_input=es,
+#        fc_input=fc,
+#        poll_interval=60,
+#        nproc=56,
+#        partition="medium",
+#        time_limit="23:50:00",
+#        gdv="gdvj30+",
+#        email_notify=email,
+#        email_address=e_addr,
+#        email_password=e_pass,
+#        quota_enabled=quota,
+#        primary_part=primary,
+#        max_primary=maxp,
+#        fallback_part=fallback,
+#        wait_for_slot=wait_slot,
+#    )
     sched.run(mode, single_input=single)
 
