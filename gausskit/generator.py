@@ -5,8 +5,6 @@ from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.completion import WordCompleter, PathCompleter
 from gausskit.completions import tab_autocomplete_prompt, HybridCompleter
 
-import re
-
 def read_xyz_file(xyz_path):
     """Reads XYZ coordinates with flexible delimiters and optional atomic index column."""
     try:
@@ -201,17 +199,95 @@ def create_benchmark_inputs():
         PathCompleter(file_filter=lambda f: f.endswith(".xyz"))
     ])
 
-    functional_completer = WordCompleter([
-        'HF', 'B3LYP', 'BLYP', 'PBE', 'PBE0', 'CAM-B3LYP', 'wB97X',
-        'wB97XD', 'M06', 'M062X', 'TPSSh', 'SCAN'
+    functional_completer = WordCompleter(DFT_FUNCTIONALS = [
+    # General Hybrid and GGA
+    'HF', 'BLYP', 'PBE', 'PBE0', 'SCAN', 'TPSSh',
+    'B3LYP', 'B3P86', 'B3PW91', 'O3LYP',
+
+    # Dispersion-Corrected Functionals
+    'APFD', 'APF', 'wB97XD',
+
+    # Long-Range-Corrected Functionals
+    'LC-wHPBE', 'LC-wPBE', 'CAM-B3LYP', 'wB97X', 'wB97',
+
+    # Truhlar Group Functionals
+    'MN15', 'M11', 'SOGGA11X', 'N12SX', 'MN12SX',
+    'PW6B95', 'PW6B95D3', 'M08HX',
+    'M06', 'M06HF', 'M062X', 'M05', 'M052X',
+
+    # PBE Correlation-Based Hybrids
+    'PBE1PBE', 'HSEH1PBE', 'OHSE2PBE', 'OHSE1PBE', 'PBEh1PBE',
+
+    # One-Parameter Hybrids
+    'B1B95', 'B1LYP', 'mPW1PW91', 'mPW1LYP', 'mPW1PBE', 'mPW3PBE',
+
+    # B97 Revisions
+    'B98', 'B971', 'B972',
+
+    # τ-dependent hybrids
+    'tHCTHhyb', 'BMK',
+
+    # Older/Legacy Hybrids
+    'X3LYP', 'HISSbPBE',
+
+    # Half-and-Half Hybrids
+    'BHandH', 'BHandHLYP',
+
+    # Exchange-only Functionals
+    'PW91', 'mPW', 'G96', 'O', 'TPSS', 'RevTPSS', 'BRx', 'PKZB', 'wPBEh', 'PBEh',
+
+    # Correlation-only Functionals
+    'VWN', 'VWN5', 'LYP', 'PL', 'P86', 'PW91', 'B95',
+    'TPSS', 'RevTPSS', 'KCIS', 'BRC', 'PKZB',
+
+    # Combined correlation variations
+    'VP86', 'V5LYP',
+
+    # Standalone Pure Functionals
+    'VSXC', 'HCTH', 'HCTH93', 'HCTH147', 'HCTH407', 'tHCTH',
+    'B97D', 'B97D3',
+    'M06L', 'SOGGA11', 'M11L', 'MN12L', 'N12', 'MN15L'
     ], ignore_case=True)
 
+
+
     basis_completer = WordCompleter([
-        'STO-3G', '3-21G', '6-31G', '6-31G(d)', '6-31+G(d,p)', '6-311G(d,p)',
-        'cc-pVDZ', 'cc-pVTZ', 'cc-pVQZ', 'aug-cc-pVDZ', 'aug-cc-pVTZ',
-        'def2-SVP', 'def2-TZVP', 'def2-TZVPP', 'def2-QZVP',
-        'gen', 'genecp'
+    # Minimal and Split-Valence
+    'STO-3G', '3-21G', '6-21G', '4-31G',
+    '6-31G', '6-31G(d)', '6-31+G(d,p)', '6-31G(d\')', '6-31G(d\',p\')',
+    '6-311G', '6-311+G(d)', '6-311+G(d,p)', '6-311++G(d,p)',
+
+    # Dunning correlation-consistent
+    'cc-pVDZ', 'cc-pVTZ', 'cc-pVQZ', 'cc-pV5Z', 'cc-pV6Z',
+    'aug-cc-pVDZ', 'aug-cc-pVTZ', 'aug-cc-pVQZ', 'aug-cc-pV5Z', 'aug-cc-pV6Z',
+    'daug-cc-pVDZ', 'daug-cc-pVTZ', 'spaug-cc-pVDZ', 'jul-cc-pVDZ',
+    'Jun-cc-pVDZ', 'May-cc-pVDZ', 'Apr-cc-pVDZ',
+
+    # Ahlrichs/Weigend def2 sets
+    'def2-SVP', 'def2-SVPP', 'def2-TZVP', 'def2-TZVPP',
+    'def2-QZVP', 'def2-QZVPP',
+
+    # ECP & pseudopotentials
+    'LanL2MB', 'LanL2DZ', 'SDD', 'SDDAll',
+    'CEP-4G', 'CEP-31G', 'CEP-121G',
+    'SHC', 'SEC',
+
+    # D95 and variations
+    'D95', 'D95V',
+
+    # Other built-ins and specialty
+    'SV', 'SVP', 'TZV', 'TZVP', 'QZVP',
+    'MidiX', 'MTSmall', 'CBSB7',
+    'EPR-II', 'EPR-III',
+    'DGDZVP', 'DGDZVP2', 'DGTZVP',
+    'UGBS', 'UGBS1P', 'UGBS2P', 'UGBS3P',
+    'UGBS1V', 'UGBS2V', 'UGBS3V',
+    'UGBS1O', 'UGBS2O', 'UGBS3O',
+
+    # Generic/genecp
+    'gen', 'genecp'
     ], ignore_case=True)
+
 
     functionals = prompt("Enter functional(s) (comma-separated): ", completer=functional_completer).strip().split(",")
 #    basis_sets = prompt("Enter basis set(s) (comma-separated): ", completer=basis_completer).strip()
@@ -248,44 +324,58 @@ def create_benchmark_inputs():
 
         for func in functionals:
             for basis in basis_sets:
-                #func_clean = func.strip().replace(" ", "").replace("(", "").replace(")", "").replace("+", "p").replace("-", "")
-                #basis_clean = basis.strip().replace(" ", "").replace("(", "").replace(")", "").replace("+", "p").replace("-", "")
                 func_clean = clean_label(func)
                 basis_clean = clean_label(basis)
                 filename = f"{molname}_{func_clean}_{basis_clean}.com"
                 chkname = filename.replace(".com", ".chk")
                 stab_chkname = chkname.replace(".chk", "-stab.chk")
-
-                route = f"#P {func.strip()}/{basis.strip()} {keywords}"
-                stability_route = f"#P {func.strip()}/{basis.strip()} chkbasis Geom=AllCheck Guess=Read Stable=Opt"
-
+        
+                method_basis = f"{func.strip()}/{basis.strip()}"
+                stability_route = f"#P {method_basis} Geom=AllCheck Guess=Read Stable=Opt SCF=(fermi,novaracc)"
+                stability_route_2 = f"#P  {func.strip()} chkbasis  Geom=AllCheck Guess=Read Stable=Opt SCF=(fermi,novaracc)"                
+                optfreq_route = f"#P {func.strip()} chkbasis Geom=AllCheck Guess=Read {keywords}"
+        
+                # Link 0: Initial Stability
                 com_content = f"""%Chk={chkname}
-{route}
+#P {method_basis} SCF=(fermi,novaracc) Guess=Mix Stable=Opt
 
-Benchmark calculation for {molname}
+Initial Stability Check for {molname}
 
 {charge} {multiplicity}
 {coords_str}
+"""
+        
+                if basis.lower() in ("gen", "genecp"):
+                    com_content += f"\n{custom_basis_content.strip()}\n\n"
+                else:
+                    com_content += "\n"
+        
+                # Link 1: Optimization + Frequency
+                com_content += f"""--Link1--
+%Chk={chkname}
+{optfreq_route}
+
+Optimization and Frequency
 
 """
-
-                if needs_custom_basis:
-                    com_content += f"{custom_basis_content.strip()}\n\n"
-
-                if "freq" in keywords.lower():
-                    com_content += f"""--Link1--
+        
+                # Link 2: Final Stability Check
+                com_content += f"""--Link1--
 %OldChk={chkname}
 %Chk={stab_chkname}
-{stability_route}
+{stability_route_2}
+
+Final Stability Check
 
 
 
 """
+        
                 with open(filename, "w") as f:
                     f.write(com_content)
-
+        
                 print(f"✅ Generated: {filename}")
-
+         
 
 
 def create_default_fc_input(gs_base: str, es_base: str) -> str:
@@ -391,4 +481,118 @@ def write_pimom_input(base_log, alpha_swaps, beta_swaps, charge, multiplicity,
     print(f"\n✅ Created file: {comfile}")
     print(f"   → Using %oldchk: {oldchk}")
     print(f"   → Output %chk  : {outchk}")
+
+periodic_table = [
+    "",  # index 0 unused
+    "H",  "He", "Li", "Be", "B",  "C",  "N",  "O",  "F",  "Ne",
+    "Na", "Mg", "Al", "Si", "P",  "S",  "Cl", "Ar", "K",  "Ca",
+    "Sc", "Ti", "V",  "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn",
+    "Ga", "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y",  "Zr",
+    "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn",
+    "Sb", "Te", "I",  "Xe", "Cs", "Ba", "La", "Ce", "Pr", "Nd",
+    "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb",
+    "Lu", "Hf", "Ta", "W",  "Re", "Os", "Ir", "Pt", "Au", "Hg",
+    "Tl", "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra", "Ac", "Th",
+    "Pa", "U",  "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm",
+    "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds",
+    "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og"
+]
+
+
+def extract_xyz_from_log(logfile_path, orientation="standard"):
+    """
+    Extract XYZ coordinates from a Gaussian .log file.
+    `orientation` = "standard" or "input"
+    Returns: list of strings like ["C 0.000 0.000 0.000", ...]
+    """
+    if not os.path.exists(logfile_path):
+        print(f"❌ File not found: {logfile_path}")
+        return None
+
+    keyword = "Standard orientation" if orientation == "standard" else "Input orientation"
+
+    with open(logfile_path, 'r', encoding='utf-8', errors='ignore') as f:
+        lines = f.readlines()
+
+    block_start = None
+    for i, line in enumerate(lines):
+        if keyword in line:
+            block_start = i
+    if block_start is None:
+        print(f"❌ Could not find orientation: {keyword}")
+        return None
+
+    # Skip 5 header lines
+    block = lines[block_start+5:]
+    xyz_lines = []
+    for line in block:
+        if "----" in line or len(line.strip()) == 0:
+            break
+        tokens = line.split()
+        atomic_number = int(tokens[1])
+        if 0 < atomic_number < len(periodic_table):
+            symbol = periodic_table[atomic_number]
+        else:
+            symbol = "X"
+        x, y, z = tokens[3:6]
+        xyz_lines.append(f"{symbol} {x} {y} {z}")
+    return xyz_lines
+
+
+def extract_xyz_cli():
+    """
+    Interactive CLI for extracting XYZ from log files.
+    """
+    print("=" * 60)
+    print("🧪 Gaussian Log to XYZ Extractor")
+    print("    - Extracts coordinates from Input or Standard orientation")
+    print("    - Can include atom count and comment line")
+    print("=" * 60)
+
+    # Ask: all or one
+    all_files = prompt("Extract from ALL .log files in this directory? [y/N]: ").strip().lower().startswith("y")
+    if all_files:
+        log_files = [f for f in os.listdir() if f.endswith(".log")]
+    else:
+        log_completer = WordCompleter([f for f in os.listdir() if f.endswith('.log')])
+        selected = prompt("Select log file: ", completer=log_completer).strip()
+        if not os.path.exists(selected):
+            print(f"❌ File does not exist: {selected}")
+            return
+        log_files = [selected]
+
+    if not log_files:
+        print("❌ No .log files found.")
+        return
+
+    # Ask: orientation
+    orient_choice = prompt("Orientation? [0] Standard  [1] Input (default: 0): ").strip()
+    orientation = "input" if orient_choice == "1" else "standard"
+
+    # Ask: format
+    fmt_choice = prompt("Output format? [0] Only XYZ lines  [1] Atom count + comment + XYZ (default: 1): ").strip()
+    include_count = fmt_choice != "0"
+
+    for log_file in log_files:
+        if "Normal termination" not in open(log_file, errors='ignore').read():
+            print(f"⚠️ Skipping {log_file}: did not terminate normally.")
+            continue
+
+        coords = extract_xyz_from_log(log_file, orientation)
+        if not coords:
+            print(f"❌ Failed to extract from {log_file}")
+            continue
+
+        base = os.path.splitext(log_file)[0]
+        outname = base + ".xyz"
+
+        with open(outname, "w") as f:
+            if include_count:
+                f.write(f"{len(coords)}\n")
+                f.write(f"{log_file} — {orientation} orientation\n")
+            for line in coords:
+                f.write(line + "\n")
+
+        print(f"✅ Extracted XYZ written to: {outname}")
+
 

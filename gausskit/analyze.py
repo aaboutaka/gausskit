@@ -320,3 +320,319 @@ def run_log_analyzer(logfile=None):
             write_combined_csv(summaries, combined_name)
             print(f"✅ Wrote combined summary: {combined_name}")
 
+
+
+def compare_log_energies():
+    import os
+    import matplotlib.pyplot as plt
+    from collections import defaultdict
+    from prompt_toolkit import prompt
+    from .utils import is_gaussian_terminated, extract_energy, hartree_to_ev
+
+    try:
+        import pandas as pd
+        has_pandas = True
+        try:
+            import xlsxwriter
+            has_xlsx = True
+        except ImportError:
+            has_xlsx = False
+    except ImportError:
+        has_pandas = False
+        has_xlsx = False
+    
+
+    def plot_group(group, group_data):
+        labels = [os.path.basename(d['Filename']) for d in group_data]
+        values = [d['ΔE (eV)'] for d in group_data]
+        plt.figure(figsize=(max(6, len(labels)*0.8), 4))
+        bars = plt.bar(labels, values)
+        plt.ylabel("ΔE (eV)")
+        plt.title(f"ΔE for {group}")
+        plt.xticks(rotation=45, ha='right')
+        for b, v in zip(bars, values):
+            plt.text(b.get_x() + b.get_width()/2, v, f"{v:.2f}", ha='center', va='bottom', fontsize=8)
+        plt.tight_layout()
+        plt.savefig(f"deltaE_{group}.png", dpi=300)
+        plt.close()
+
+    print("=" * 70)
+    print("Advanced Energy Comparison: Grouped by Functional+Basis or Molecule")
+    print("=" * 70)
+
+    method = prompt("Energy method [scf/zpe/mp2/pm2/pmp2/td] (default: scf): ").strip().lower()
+    if method not in ["scf", "zpe", "mp2", "pm2", "pmp2", "td"]:
+        method = "scf"
+    
+    exclude = prompt("Exclude files with substring? (press ENTER to skip): ").strip()
+    exclude = exclude if exclude else None
+    
+    mol_filter = prompt("Filter by molecule name (e.g. H2 or H2O)? (default: all): ").strip()
+    mol_filter = mol_filter if mol_filter else None
+    
+    comparison_mode = prompt("Comparison mode: [1] Same method (default)  [2] Same geometry  [3] Both: ").strip()
+    comparison_mode = comparison_mode if comparison_mode in ["1", "2", "3"] else "1"
+
+
+    save_prompt = prompt("Save results to CSV/Excel? (y/n) (default: y): ").strip().lower()
+    save_results = has_pandas and (save_prompt in ["", "y", "yes"])
+    
+    sheet_mode = "group"
+    if save_results:
+        sheet_mode_prompt = prompt("Excel sheet mode: [1] Group (default)  [2] Molecule: ").strip()
+        sheet_mode = "molecule" if sheet_mode_prompt == "2" else "group"
+     
+
+    log_files = [f for f in os.listdir(".") if f.endswith(".log") and (exclude not in f if exclude else True)]
+    if mol_filter:
+        log_files = [f for f in log_files if f.startswith(mol_filter + "_")]
+
+    data = []
+    group_dict = defaultdict(list)
+    skipped_logs = []
+
+    for log in log_files:
+        ok, err = is_gaussian_terminated(log)
+        if not ok:
+            skipped_logs.append((log, err))
+            continue
+        energy, extras = extract_energy(log, method)
+        if energy is None:
+            skipped_logs.append((log, "Energy extraction failed"))
+            continue
+
+        base = log[:-4]
+        parts = base.split("_")
+        if len(parts) < 3:
+            skipped_logs.append((log, "Invalid filename format"))
+            continue
+
+        mol = parts[0]
+        func = parts[-2]
+        basis = parts[-1]
+        
+        groups = []
+        if comparison_mode in ["1", "3"]:
+            groups.append(f"{func}_{basis}")
+        if comparison_mode in ["2", "3"]:
+            groups.append(mol)
+        
+        record = {
+            "Filename": log,
+            "Molecule": mol,
+            "Functional": func,
+            "BasisSet": basis,
+            "Group": groups[0] if groups else "Unknown",
+            "Energy (Hartree)": energy,
+            "Extras": extras
+        }
+        data.append(record)
+        for g in groups:
+            group_dict[g].append(record)
+
+
+    if not data:
+        print("❌ No valid log files or energies found.")
+        return
+
+    all_rows = []
+    excel_sheets = {}
+
+    for group, entries in group_dict.items():
+        entries.sort(key=lambda r: r["Energy (Hartree)"])
+        ref_energy = entries[0]["Energy (Hartree)"]
+
+        print(f"\n📊 Group: {group} — {len(entries)} entries")
+        print(f"{'Filename':<40} {'ΔE (Ha)':>12} {'ΔE (eV)':>10}")
+
+        group_data = []
+        for rec in entries:
+            delta_h = rec["Energy (Hartree)"] - ref_energy
+            delta_ev = hartree_to_ev(delta_h)
+            row = {
+                "Filename": rec["Filename"],
+                "Molecule": rec["Molecule"],
+                "Functional": rec["Functional"],
+                "BasisSet": rec["BasisSet"],
+                "Energy (Hartree)": rec["Energy (Hartree)"],
+                "ΔE (Hartree)": delta_h,
+                "ΔE (eV)": delta_ev
+            }
+            group_data.append(row)
+            all_rows.append(row)
+            print(f"{rec['Filename']:<40} {delta_h:>12.6f} {delta_ev:>10.4f}")
+
+        plot_group(group, group_data)
+        if save_results:
+            df_group = pd.DataFrame(group_data)
+            excel_sheets[group] = df_group
+
+    if save_results:
+        if all_rows:
+            df_all = pd.DataFrame(all_rows)
+            if "Group" in df_all.columns and "ΔE (eV)" in df_all.columns:
+                df_all.sort_values(by=["Group", "ΔE (eV)"], inplace=True)
+            excel_sheets["Global"] = df_all
+            base = f"benchmark_energy_{method}"
+            if not has_xlsx:
+                print("❌ Missing required module 'xlsxwriter'. Install it via:")
+                print("   pip install XlsxWriter")
+                print("Exiting without saving Excel files.")
+                return
+            with pd.ExcelWriter(base + ".xlsx", engine="xlsxwriter") as writer:
+                if sheet_mode == "group":
+                    for sheet, df in excel_sheets.items():
+                        df.to_excel(writer, sheet_name=sheet[:31], index=False)
+                elif sheet_mode == "molecule":
+                    mol_groups = df_all.groupby("Molecule")
+                    for mol, dfmol in mol_groups:
+                        dfmol.to_excel(writer, sheet_name=mol[:31], index=False)
+            
+            df_all.to_csv(base + ".csv", index=False)
+            print(f"\n✅ Saved: {base}.xlsx and {base}.csv")
+        else:
+            print("⚠️ No valid energy records to save.")
+
+    if skipped_logs:
+        with open("skipped_logs_summary.txt", "w") as f:
+            for log, reason in skipped_logs:
+                f.write(f"{log}: {reason}\n")
+        print(f"⚠️ Skipped {len(skipped_logs)} files. See 'skipped_logs_summary.txt'.")
+ 
+
+
+#def compare_log_energies():
+#    """
+#    Energy Extraction & Comparison Tool for Benchmarking.
+#    Extracts SCF, ZPE, or MP2 energies from .log files and compares relative to the lowest energy.
+#    Supports optional pandas output (CSV/XLSX).
+#    """
+#    import os
+#    import re
+#    from prompt_toolkit import prompt
+#
+#    try:
+#        import pandas as pd
+#        has_pandas = True
+#    except ImportError:
+#        has_pandas = False
+#
+#    def is_gaussian_terminated(filepath, lines_to_check=20):
+#        try:
+#            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+#                return any("Normal termination of Gaussian" in line for line in f.readlines()[-lines_to_check:])
+#        except Exception as e:
+#            print(f"⚠️ Error reading {filepath}: {e}")
+#            return False
+#
+#    def extract_energy(filepath, method="scf"):
+#        energy = None
+#        raw = []
+#        method = method.lower()
+#        try:
+#            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+#                lines = f.readlines()
+#        except Exception as e:
+#            print(f"⚠️ Error reading {filepath}: {e}")
+#            return None, None
+#
+#        if method == "zpe":
+#            for line in lines:
+#                if "Sum of electronic and zero-point Energies=" in line:
+#                    match = re.search(r"= *(-?\d+\.\d+)", line)
+#                    if match:
+#                        energy = float(match.group(1))
+#                        break
+#        elif method == "scf":
+#            for line in lines:
+#                if "SCF Done" in line:
+#                    match = re.search(r'SCF Done:\s+E\([^)]+\)\s*=\s*(-?\d+\.\d+)', line)
+#                    if match:
+#                        raw.append(float(match.group(1)))
+#            if raw:
+#                energy = raw[-1]
+#        elif method in ("mp2", "pm2", "pmp2", "pmp2-0"):
+#            last_lines = lines[-100:]
+#            combined = ''.join(line.strip() for line in last_lines)
+#            pattern = rf'\\{method.upper()}[-0]*=([-]?\d+\.\d+)'
+#            match = re.search(pattern, combined)
+#            if match:
+#                energy = float(match.group(1))
+#            else:
+#                print(f"❌ Could not find {method.upper()} energy in {filepath}")
+#        else:
+#            raise ValueError(f"Unsupported energy method: {method}")
+#        return energy, raw[-2:] if raw else None
+#
+#    def hartree_to_ev(h):
+#        return h * 27.2114
+#
+#    print("=" * 60)
+#    print("    Energy Extraction & Comparison for Benchmarking")
+#    print("=" * 60)
+#
+#    # --- 🧾 All Inputs Upfront ---
+#    match_input = prompt("Enter substrings to match filenames (comma-separated or 'all') [default: all]: ").strip()
+#    match_strs = [] if not match_input or match_input.lower() == "all" else match_input.split(",")
+#
+#    method = prompt("Energy method [scf/zpe/mp2/pm2/pmp2] (default: scf): ").strip().lower() or "scf"
+#    exclude = prompt("Exclude files with substring? (press ENTER to skip): ").strip() or None
+#    save_results = False
+#    if has_pandas:
+#        save_results = prompt("Save results to CSV/Excel? (y/n): ").strip().lower().startswith("y")
+#
+#    # --- 📂 Collect files ---
+#    all_logs = [f for f in os.listdir('.') if f.endswith(".log") and (exclude not in f if exclude else True)]
+#    if not match_strs:
+#        grouped_logs = {"ALL": all_logs}
+#    else:
+#        grouped_logs = {m: [f for f in all_logs if m in f] for m in match_strs}
+#
+#    # --- 🧪 Process ---
+#    for match_str, log_files in grouped_logs.items():
+#        results = []
+#        for log in log_files:
+#            if not is_gaussian_terminated(log):
+#                continue
+#            energy, extras = extract_energy(log, method=method)
+#            if energy is not None:
+#                results.append((log, energy, extras))
+#
+#        if not results:
+#            print(f"❌ No valid energies found for match: {match_str}")
+#            continue
+#
+#        ref_file, ref_energy, _ = min(results, key=lambda x: x[1])
+#
+#        print(f"\n📋 {method.upper()} Energy Comparison for match '{match_str}' (reference: {ref_file})")
+#        print(f"{'Filename':<40} {'Energy (Ha)':>15} {'ΔE (Ha)':>12} {'ΔE (eV)':>10}")
+#        print("-" * 80)
+#
+#        data = []
+#        for fname, energy, extras in results:
+#            delta_h = energy - ref_energy
+#            delta_ev = hartree_to_ev(delta_h)
+#            data.append({
+#                'Filename': fname,
+#                'Energy (Hartree)': energy,
+#                'ΔE (Hartree)': delta_h,
+#                'ΔE (eV)': delta_ev,
+#                'Info': extras
+#            })
+#
+#        for row in sorted(data, key=lambda r: r['ΔE (eV)']):
+#            print(f"{row['Filename']:<40} {row['Energy (Hartree)']:>15.6f} {row['ΔE (Hartree)']:>12.6f} {row['ΔE (eV)']:>10.4f}")
+#
+#        # 🧾 Save if requested
+#        if save_results and has_pandas:
+#            df = pd.DataFrame(data)
+#            df.sort_values(by='ΔE (eV)', inplace=True)
+#            df.reset_index(drop=True, inplace=True)
+#            base = f'energy_{method}_{match_str.strip().replace(" ", "_")}'
+#            df.to_excel(base + '.xlsx', index=False)
+#            df.to_csv(base + '.csv', index=False)
+#            print(f"✅ Saved to {base}.xlsx and {base}.csv")
+#        elif not has_pandas:
+#            print("ℹ️ pandas not installed — Excel and CSV output skipped.")
+#
+#
