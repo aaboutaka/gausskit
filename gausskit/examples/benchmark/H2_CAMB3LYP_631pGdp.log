@@ -1,0 +1,485 @@
+ Set GAUSS_MDEF to "92GB".
+ Set GAUSS_PDEF to "56".
+ Entering Gaussian System, Link 0=gdv
+ Initial command:
+ /home/hhratchian/gaussian/gdv-20250101-j30+/gdv/local/l1.exe "/scratch/aaboutaka/1562807/Gau-95618.inp" -scrdir="/scratch/aaboutaka/1562807/"
+ Default is to use a total of  56 processors:
+                               56 via shared-memory
+                                1 via Linda
+ Entering Link 1 = /home/hhratchian/gaussian/gdv-20250101-j30+/gdv/local/l1.exe PID=     95619.
+  
+ Copyright (c) 1988-2024, Gaussian, Inc.  All Rights Reserved.
+  
+ This is the private, development version of
+ the Gaussian(R) DV system of programs. It is based on
+ the Gaussian(R) 16 system (copyright 2016, Gaussian, Inc.),
+ the Gaussian(R) 09 system (copyright 2009, Gaussian, Inc.),
+ the Gaussian(R) 03 system (copyright 2003, Gaussian, Inc.),
+ the Gaussian(R) 98 system (copyright 1998, Gaussian, Inc.),
+ the Gaussian(R) 94 system (copyright 1995, Gaussian, Inc.),
+ the Gaussian 92(TM) system (copyright 1992, Gaussian, Inc.),
+ the Gaussian 90(TM) system (copyright 1990, Gaussian, Inc.),
+ the Gaussian 88(TM) system (copyright 1988, Gaussian, Inc.),
+ the Gaussian 86(TM) system (copyright 1986, Carnegie Mellon
+ University), and the Gaussian 82(TM) system (copyright 1983,
+ Carnegie Mellon University). Gaussian is a federally registered
+ trademark of Gaussian, Inc.
+  
+ This software contains proprietary and confidential information,
+ including trade secrets, belonging to Gaussian, Inc.
+  
+ This software is provided under written license and may be
+ used, copied, transmitted, or stored only in accord with that
+ written license.
+  
+ The following legend is applicable only to US Government
+ contracts under FAR:
+  
+                    RESTRICTED RIGHTS LEGEND
+  
+ Use, reproduction and disclosure by the US Government is
+ subject to restrictions as set forth in subparagraphs (a)
+ and (c) of the Commercial Computer Software - Restricted
+ Rights clause in FAR 52.227-19.
+  
+ Gaussian, Inc.
+ 340 Quinnipiac St., Bldg. 40, Wallingford CT 06492
+  
+  
+ ---------------------------------------------------------------
+ Warning -- This program may not be used in any manner that
+ competes with the business of Gaussian, Inc. or will provide
+ assistance to any competitor of Gaussian, Inc.  The licensee
+ of this program is prohibited from giving any competitor of
+ Gaussian, Inc. access to this program.  By using this program,
+ the user acknowledges that Gaussian, Inc. is engaged in the
+ business of creating and licensing software in the field of
+ computational chemistry and represents and warrants to the
+ licensee that it is not a competitor of Gaussian, Inc. and that
+ it will not use this program in any manner prohibited above.
+ ---------------------------------------------------------------
+  
+
+ Cite this work as:
+ Gaussian Development Version, Revision J.30+,
+ M. J. Frisch, G. W. Trucks, G. Scalmani, J. R. Cheeseman, X. Li, 
+ J. Bloino, B. G. Janesko, A. V. Marenich, J. Zheng, F. Lipparini, 
+ A. Jenkins, A. Liu, H. Liu, H. B. Schlegel, G. E. Scuseria, 
+ M. A. Robb, V. Barone, G. A. Petersson, H. Nakatsuji, B. Mennucci, 
+ C. Adamo, N. Rega, M. Caricato, H. P. Hratchian, J. V. Ortiz, 
+ F. Pawlowski, A. F. Izmaylov, H. Hu, C. Liao, J. L. Sonnenberg, 
+ D. Williams-Young, F. Ding, R. Gomperts, F. Egidi, J. Goings, 
+ B. Peng, A. Petrone, T. Henderson, D. Ranasinghe, V. G. Zakrzewski, 
+ J. Gao, G. Zheng, W. Liang, M. Hada, M. Ehara, K. Toyota, R. Fukuda, 
+ J. Hasegawa, M. Ishida, T. Nakajima, Y. Honda, O. Kitao, H. Nakai, 
+ T. Vreven, K. Throssell, J. A. Montgomery, Jr., J. E. Peralta, 
+ F. Ogliaro, M. J. Bearpark, J. J. Heyd, E. N. Brothers, K. N. Kudin, 
+ V. N. Staroverov, T. A. Keith, R. Kobayashi, J. Normand, 
+ K. Raghavachari, A. P. Rendell, J. C. Burant, S. S. Iyengar, 
+ M. Cossi, J. M. Millam, M. Klene, R. Cammi, R. L. Martin, O. Farkas, 
+ J. B. Foresman, and D. J. Fox, Gaussian, Inc., Wallingford CT, 2024.
+ 
+ *******************************************
+ Gaussian DV:  ES64L-GDVRevJ.30+ 18-Dec-2024
+                  2-Aug-2025 
+ *******************************************
+ %Chk=H2_CAMB3LYP_631pGdp.chk
+ ------------------------------------------------------------------
+ #P CAM-B3LYP/6-31+G(d,p) SCF=(fermi,novaracc) Guess=Mix Stable=Opt
+ ------------------------------------------------------------------
+ 1/37=210000000,38=1,172=1/1;
+ 2/12=2/2;
+ 3/5=1,6=6,7=1011,11=2,25=1,30=1,74=-40/1,2,3;
+ 4/13=-1/1;
+ 5/5=2,22=13,38=1/2;
+ 6/7=2,8=2,9=2,10=2,28=1/1;
+ 8/6=1,10=90,11=11/1;
+ 9/8=-3,42=1,46=1/14;
+ 5/5=2,8=3,17=40,22=13,38=1/8(-2);
+ 6/7=2,8=2,9=2,10=2,28=1/1;
+ 99/5=1,9=1/99;
+ Leave Link    1 at Sat Aug  2 15:36:10 2025, MaxMem=           0 cpu:               1.8 elap:               0.1
+ (Enter /home/hhratchian/gaussian/gdv-20250101-j30+/gdv/local/l101.exe)
+ 
+  Hrant - IAPOps =                         0
+  Hrant - IAPOp1 =                         0
+  Hrant - IAPOp2 =                         0
+  Hrant - DoAP   =   F
+ 
+ ------------------------------
+ Initial Stability Check for H2
+ ------------------------------
+ Symbolic Z-matrix:
+ Charge =     0 Multiplicity =     1
+ H                     0.        0.        0. 
+ H                     0.        0.        0.74 
+ 
+ ITRead=  0  0
+ MicOpt= -1 -1
+ NAtoms=      2 NQM=        2 NQMF=       0 NMMI=      0 NMMIF=      0
+                NMic=       0 NMicF=      0.
+                    Isotopes and Nuclear Properties:
+ (Nuclear quadrupole moments (NQMom) in fm**2, nuclear magnetic moments (NMagM)
+  in nuclear magnetons)
+
+  Atom         1           2
+ IAtWgt=           1           1
+ AtmWgt=   1.0078250   1.0078250
+ NucSpn=           1           1
+ AtZEff=   -0.000000   -0.000000
+ NQMom=    0.0000000   0.0000000
+ NMagM=    2.7928460   2.7928460
+ AtZNuc=   1.0000000   1.0000000
+ Leave Link  101 at Sat Aug  2 15:36:10 2025, MaxMem= 12348030976 cpu:               1.4 elap:               0.1
+ (Enter /home/hhratchian/gaussian/gdv-20250101-j30+/gdv/l202.exe)
+                          Input orientation:                          
+ ---------------------------------------------------------------------
+ Center     Atomic      Atomic             Coordinates (Angstroms)
+ Number     Number       Type             X           Y           Z
+ ---------------------------------------------------------------------
+      1          1           0        0.000000    0.000000    0.000000
+      2          1           0        0.000000    0.000000    0.740000
+ ---------------------------------------------------------------------
+ Stoichiometry    H2
+ Framework group  D*H[C*(H.H)]
+ Deg. of freedom     1
+ Full point group                 D*H     NOp   8
+ Largest Abelian subgroup         D2H     NOp   8
+ Largest concise Abelian subgroup C2      NOp   2
+                         Standard orientation:                         
+ ---------------------------------------------------------------------
+ Center     Atomic      Atomic             Coordinates (Angstroms)
+ Number     Number       Type             X           Y           Z
+ ---------------------------------------------------------------------
+      1          1           0        0.000000    0.000000    0.370000
+      2          1           0        0.000000    0.000000   -0.370000
+ ---------------------------------------------------------------------
+ Rotational constants (GHZ):           0.0000000        1831.4649542        1831.4649542
+ Leave Link  202 at Sat Aug  2 15:36:10 2025, MaxMem= 12348030976 cpu:               1.2 elap:               0.0
+ (Enter /home/hhratchian/gaussian/gdv-20250101-j30+/gdv/local/l301.exe)
+ Standard basis: 6-31+G(d,p) (6D, 7F)
+ Ernie: Thresh=  0.10000D-02 Tol=  0.10000D-05 Strict=F.
+ There are     3 symmetry adapted cartesian basis functions of AG  symmetry.
+ There are     0 symmetry adapted cartesian basis functions of B1G symmetry.
+ There are     1 symmetry adapted cartesian basis functions of B2G symmetry.
+ There are     1 symmetry adapted cartesian basis functions of B3G symmetry.
+ There are     0 symmetry adapted cartesian basis functions of AU  symmetry.
+ There are     3 symmetry adapted cartesian basis functions of B1U symmetry.
+ There are     1 symmetry adapted cartesian basis functions of B2U symmetry.
+ There are     1 symmetry adapted cartesian basis functions of B3U symmetry.
+ There are     3 symmetry adapted basis functions of AG  symmetry.
+ There are     0 symmetry adapted basis functions of B1G symmetry.
+ There are     1 symmetry adapted basis functions of B2G symmetry.
+ There are     1 symmetry adapted basis functions of B3G symmetry.
+ There are     0 symmetry adapted basis functions of AU  symmetry.
+ There are     3 symmetry adapted basis functions of B1U symmetry.
+ There are     1 symmetry adapted basis functions of B2U symmetry.
+ There are     1 symmetry adapted basis functions of B3U symmetry.
+    10 basis functions,    14 primitive gaussians,    10 cartesian basis functions
+     1 alpha electrons        1 beta electrons
+       nuclear repulsion energy         0.7151043391 Hartrees.
+ IExCor=   2004019 DFT=T Ex+Corr=CAM-B3LYP ScaHFX=  1.000000
+ ScaDFX=  1.000000  1.000000  1.000000  0.810000  1.000000  0.000000
+ ScaDFX=  0.000000  0.000000  0.000000  0.000000  0.000000  0.000000
+ Grid=UltraFine IRanWt=     -1 IRanGd=            0 ICorTp=0 IEDCtl=  2004
+ HFx  wShort=  0.000000 wLong=  0.330000 cFull=  0.190000 cShort=  0.000000 cLong=  0.460000
+ DFx  wShort=  0.330000 wLong=  0.000000 cFull=  0.350000 cShort=  0.460000 cLong=  0.000000
+ NAtoms=    2 NActive=    2 NUniq=    1 SFac= 4.00D+00 NAtFMM=   60 NAOKFM=F Big=F
+ Integral buffers will be    131072 words long.
+ Raffenetti 2 integral format.
+ Two-electron integral symmetry is turned on.
+ Leave Link  301 at Sat Aug  2 15:36:10 2025, MaxMem= 12348030976 cpu:               1.3 elap:               0.1
+ (Enter /home/hhratchian/gaussian/gdv-20250101-j30+/gdv/l302.exe)
+ NPDir=0 NMtPBC=     1 NCelOv=     1 NCel=       1 NClECP=     1 NCelD=      1
+         NCelK=      1 NCelE2=     1 NClLst=     1 CellRange=     0.0.
+ One-electron integrals computed using PRISM.
+ One-electron integral symmetry used in STVInt
+ NBasis=    10 RedAO= T EigKep=  9.62D-02  NBF=     3     0     1     1     0     3     1     1
+ NBsUse=    10 1.00D-06 EigRej= -1.00D+00 NBFU=     3     0     1     1     0     3     1     1
+ Precomputing XC quadrature grid using
+ IXCGrd=   9 Grid=UltraFine IRanWt=          -1 IRanGd=           0 AccXCQ= 0.00D+00.
+ Generated NRdTot=       0 NPtTot=       45166 NUsed=           0 NTot=          64
+ NSgBfM=    10    10    10    10    10 MxSgAt=     2 MxSgA2=     2 SizInc=   0.000
+ NMBTot=      432 MaxBatPerAtom=       80 MaxMicBPerAtom=      218 NBfPt=              380270.
+ Leave Link  302 at Sat Aug  2 15:36:10 2025, MaxMem= 12348030976 cpu:               3.8 elap:               0.1
+ (Enter /home/hhratchian/gaussian/gdv-20250101-j30+/gdv/l303.exe)
+ DipDrv:  MaxL=1.
+ Leave Link  303 at Sat Aug  2 15:36:10 2025, MaxMem= 12348030976 cpu:               0.8 elap:               0.0
+ (Enter /home/hhratchian/gaussian/gdv-20250101-j30+/gdv/l401.exe)
+ ExpMin= 1.61D-01 ExpMax= 1.87D+01 ExpMxC= 1.87D+01 IAcc=3 Grid=UltraFine AccDes= 0.00D+00
+ Harris functional with IExCor=10009 and Grid=UltraFine diagonalized for initial guess.
+ HarFok:  IExCor=   10009 AccDes= 0.00D+00 Grid=UltraFine IDoV= 1 UseB2=F ITyADJ=14 ICtDFT=  3500011
+ FoFCou: FMM=F IPFlag=           0 FMFlag=      100000 FMFlg1=           0
+         NFxFlg=           0 DoJE=T BraDBF=F KetDBF=T FulRan=T
+         wScrn=  0.000000 ICntrl=       500 IOpCl=  0 I1Cent=   200000004 NGrid=           0
+         NMat0=    1 NMatS0=      1 NMatT0=    0 NMatD0=    1 NMtDS0=    0 NMtDT0=    0
+ Petite list used in FoFCou.
+ Harris En= -1.18004217925549    
+ JPrj=0 DoOrth=F DoCkMO=T.
+ Mixing orbitals, IMix= 1 IMixAn=  0 NRI=1 NE=    1 Coef=  7.07106781D-01  7.07106781D-01
+ Initial guess orbital symmetries:
+       Occupied  (?A)
+       Virtual   (?A) (SGG) (SGU) (PIU) (PIU) (SGG) (PIG) (PIG)
+                 (SGU)
+ Leave Link  401 at Sat Aug  2 15:36:10 2025, MaxMem= 12348030976 cpu:               4.0 elap:               0.1
+ (Enter /home/hhratchian/gaussian/gdv-20250101-j30+/gdv/local/l502.exe)
+ Keep R1 ints in memory in symmetry-blocked form, NReq=48371868.
+ FoFCou: FMM=F IPFlag=           0 FMFlag=           0 FMFlg1=           0
+         NFxFlg=           0 DoJE=F BraDBF=F KetDBF=F FulRan=T
+         wScrn=  0.000000 ICntrl=       600 IOpCl=  0 I1Cent=           0 NGrid=           0
+         NMat0=    1 NMatS0=     55 NMatT0=    0 NMatD0=    1 NMtDS0=    0 NMtDT0=    0
+ Petite list used in FoFCou.
+ Closed shell SCF:
+ Using DIIS extrapolation, IDIIS=    10.
+ NGot= 12348030976 LenX= 12348027340 LenY= 12348026458
+ Requested convergence on RMS density matrix=1.00D-08 within 128 cycles.
+ Requested convergence on MAX density matrix=1.00D-06.
+ Requested convergence on             energy=1.00D-06.
+ Level shift goal  0.100 maximum shift  0.100.
+ No special actions if energy rises.
+ Dynamic level shift is on during FON iterations.
+ An orbital has undefined symmetry, so N**3 symmetry is turned off.
+ 
+  Hrant - CycOpn.
+ 
+
+ Cycle   1  Pass 1  IDiag  1:
+ Density matrix breaks symmetry, PCut= 1.00D-04
+ Density matrix has no symmetry -- integrals replicated.
+ E=-0.573747975926203    
+ DIIS: error= 1.15D-01 at cycle   1 NSaved=   1.
+ NSaved= 1 IEnMin= 1 EnMin=-0.573747975926203     IErMin= 1 ErrMin= 1.15D-01
+ ErrMax= 1.15D-01  0.00D+00 EMaxC= 1.00D+00 BMatC= 4.00D-02 BMatP= 4.00D-02
+ Rises=F IDIUse=1 WtCom= 1.00D+00 WtEn= 0.00D+00
+ Coeff-Com:  0.100D+01
+ Coeff:      0.100D+01
+ Gap=    -0.024 Goal=     0.100 Shift=    0.100
+ T= 2302. Gap= 0.532 NK=0 IS=    2 IE=   10 IFin=    1
+          NO(<0.9)=   0  NV(>0.1)=   0      1.00e < EF      0.00e >EF  Err=0.0D+00
+ GapD=   -0.024 DampG=0.250 DampE=0.250 DampFc=0.1250 IDamp=-1.
+ Damping current iteration by 1.25D-01
+ RMSDP=2.52D-01 MaxDP=1.43D+00              OVMax= 6.56D-01
+
+ Cycle   2  Pass 1  IDiag  1:
+ Density matrix breaks symmetry, PCut= 1.00D-04
+ Density matrix has no symmetry -- integrals replicated.
+ E=-0.640796599514786     Delta-E=       -0.067048623589 Rises=F Damp=T AM=F Ri=F Fa=F
+ DIIS: error= 1.04D-01 at cycle   2 NSaved=   2.
+ NSaved= 2 IEnMin= 2 EnMin=-0.640796599514786     IErMin= 2 ErrMin= 1.04D-01
+ ErrMax= 1.04D-01  0.00D+00 EMaxC= 1.00D+00 BMatC= 3.29D-02 BMatP= 4.00D-02
+ Rises=F IDIUse=1 WtCom= 1.00D+00 WtEn= 0.00D+00
+ Coeff-Com: -0.751D+01 0.851D+01
+ Coeff:     -0.751D+01 0.851D+01
+ Gap=     0.703 Goal=     0.100 Shift=    0.000
+ T= 2283. Gap= 0.669 NK=0 IS=    2 IE=   10 IFin=    1
+          NO(<0.9)=   0  NV(>0.1)=   0      1.00e < EF      0.00e >EF  Err=0.0D+00
+ GapD=    0.703 DampG=2.000 DampE=0.250 DampFc=0.5000 IDamp=-1.
+ Damping current iteration by 5.00D-01
+ RMSDP=2.24D-01 MaxDP=1.27D+00 DE=-6.70D-02 OVMax= 1.04D-01
+
+ Cycle   3  Pass 1  IDiag  1:
+ Density matrix breaks symmetry, PCut= 1.00D-04
+ Density matrix has no symmetry -- integrals replicated.
+ E=-0.873102018769100     Delta-E=       -0.232305419254 Rises=F Damp=T AM=F Ri=F Fa=F
+ DIIS: error= 8.75D-02 at cycle   3 NSaved=   3.
+ NSaved= 3 IEnMin= 3 EnMin=-0.873102018769100     IErMin= 3 ErrMin= 8.75D-02
+ ErrMax= 8.75D-02  0.00D+00 EMaxC= 1.00D+00 BMatC= 1.86D-02 BMatP= 3.29D-02
+ Rises=F IDIUse=1 WtCom= 1.00D+00 WtEn= 0.00D+00
+ Coeff-Com: -0.628D+01 0.682D+01 0.455D+00
+ Coeff:     -0.628D+01 0.682D+01 0.455D+00
+ Gap=     0.667 Goal=     0.100 Shift=    0.000
+ T= 2231. Gap= 0.667 NK=0 IS=    2 IE=   10 IFin=    1
+          NO(<0.9)=   0  NV(>0.1)=   0      1.00e < EF      0.00e >EF  Err=0.0D+00
+ GapD=    0.667 DampG=2.000 DampE=0.500 DampFc=1.0000 IDamp=-1.
+ RMSDP=1.14D-01 MaxDP=6.51D-01 DE=-2.32D-01 OVMax= 2.23D-02
+
+ Cycle   4  Pass 1  IDiag  1:
+ Density matrix breaks symmetry, PCut= 1.00D-04
+ Density matrix has no symmetry -- integrals replicated.
+ E= -1.13820099901113     Delta-E=       -0.265098980242 Rises=F Damp=F AM=F Ri=F Fa=F
+ DIIS: error= 5.31D-02 at cycle   4 NSaved=   4.
+ NSaved= 4 IEnMin= 4 EnMin= -1.13820099901113     IErMin= 4 ErrMin= 5.31D-02
+ ErrMax= 5.31D-02  0.00D+00 EMaxC= 1.00D+00 BMatC= 1.41D-02 BMatP= 1.86D-02
+ Rises=F IDIUse=1 WtCom= 1.00D+00 WtEn= 0.00D+00
+ Coeff-Com: -0.424D+01 0.677D+01-0.390D+01 0.237D+01
+ Coeff:     -0.424D+01 0.677D+01-0.390D+01 0.237D+01
+ Gap=     0.648 Goal=     0.100 Shift=    0.000
+ T= 2096. Gap= 0.649 NK=0 IS=    2 IE=   10 IFin=    1
+          NO(<0.9)=   0  NV(>0.1)=   0      1.00e < EF      0.00e >EF  Err=0.0D+00
+ GapD=    0.648 DampG=2.000 DampE=0.500 DampFc=1.0000 IDamp=-1.
+ RMSDP=6.02D-03 MaxDP=2.25D-02 DE=-2.65D-01 OVMax= 3.13D-02
+
+ Cycle   5  Pass 1  IDiag  1:
+ Density matrix breaks symmetry, PCut= 1.00D-04
+ Density matrix has no symmetry -- integrals replicated.
+ E= -1.15152418819211     Delta-E=       -0.013323189181 Rises=F Damp=F AM=F Ri=F Fa=F
+ DIIS: error= 4.46D-02 at cycle   5 NSaved=   5.
+ NSaved= 5 IEnMin= 5 EnMin= -1.15152418819211     IErMin= 5 ErrMin= 4.46D-02
+ ErrMax= 4.46D-02  0.00D+00 EMaxC= 1.00D+00 BMatC= 7.30D-03 BMatP= 1.41D-02
+ Rises=F IDIUse=1 WtCom= 1.00D+00 WtEn= 0.00D+00
+ Coeff-Com: -0.197D+01 0.371D+01-0.304D+01 0.710D+00 0.159D+01
+ Coeff:     -0.197D+01 0.371D+01-0.304D+01 0.710D+00 0.159D+01
+ Gap=     0.655 Goal=     0.100 Shift=    0.000
+ T= 1800. Gap= 0.657 NK=0 IS=    2 IE=   10 IFin=    1
+          NO(<0.9)=   0  NV(>0.1)=   0      1.00e < EF      0.00e >EF  Err=0.0D+00
+ GapD=    0.655 DampG=2.000 DampE=0.500 DampFc=1.0000 IDamp=-1.
+ RMSDP=7.55D-03 MaxDP=3.81D-02 DE=-1.33D-02 OVMax= 4.98D-02
+
+ Cycle   6  Pass 1  IDiag  1:
+ Density matrix breaks symmetry, PCut= 1.00D-04
+ Density matrix has no symmetry -- integrals replicated.
+ E= -1.16533591122020     Delta-E=       -0.013811723028 Rises=F Damp=F AM=F Ri=F Fa=F
+ DIIS: error= 2.35D-02 at cycle   6 NSaved=   6.
+ NSaved= 6 IEnMin= 6 EnMin= -1.16533591122020     IErMin= 6 ErrMin= 2.35D-02
+ ErrMax= 2.35D-02  0.00D+00 EMaxC= 1.00D+00 BMatC= 1.96D-03 BMatP= 7.30D-03
+ Rises=F IDIUse=1 WtCom= 1.00D+00 WtEn= 0.00D+00
+ Coeff-Com: -0.362D+00 0.402D+00 0.963D-01 0.659D+00-0.230D+01 0.251D+01
+ Coeff:     -0.362D+00 0.402D+00 0.963D-01 0.659D+00-0.230D+01 0.251D+01
+ Gap=     0.650 Goal=     0.100 Shift=    0.000
+ T= 1500. Gap= 0.651 NK=0 IS=    2 IE=   10 IFin=    1
+          NO(<0.9)=   0  NV(>0.1)=   0      1.00e < EF      0.00e >EF  Err=0.0D+00
+ GapD=    0.650 DampG=2.000 DampE=0.500 DampFc=1.0000 IDamp=-1.
+ RMSDP=4.03D-03 MaxDP=1.89D-02 DE=-1.38D-02 OVMax= 3.68D-02
+
+ Cycle   7  Pass 1  IDiag  1:
+ Density matrix breaks symmetry, PCut= 1.00D-04
+ Density matrix has no symmetry -- integrals replicated.
+ E= -1.16986167492617     Delta-E=       -0.004525763706 Rises=F Damp=F AM=F Ri=F Fa=F
+ DIIS: error= 4.31D-03 at cycle   7 NSaved=   7.
+ NSaved= 7 IEnMin= 7 EnMin= -1.16986167492617     IErMin= 7 ErrMin= 4.31D-03
+ ErrMax= 4.31D-03  0.00D+00 EMaxC= 1.00D+00 BMatC= 8.39D-05 BMatP= 1.96D-03
+ Rises=F IDIUse=1 WtCom= 1.00D+00 WtEn= 0.00D+00
+ Coeff-Com: -0.504D-01 0.315D-01 0.856D-01 0.160D+00-0.808D+00 0.832D+00
+ Coeff-Com:  0.749D+00
+ Coeff:     -0.504D-01 0.315D-01 0.856D-01 0.160D+00-0.808D+00 0.832D+00
+ Coeff:      0.749D+00
+ Gap=     0.652 Goal=     0.100 Shift=    0.000
+ T= 1200. Gap= 0.652 NK=0 IS=    2 IE=   10 IFin=    1
+          NO(<0.9)=   0  NV(>0.1)=   0      1.00e < EF      0.00e >EF  Err=0.0D+00
+ GapD=    0.652 DampG=2.000 DampE=1.000 DampFc=2.0000 IDamp=-1.
+ RMSDP=8.48D-04 MaxDP=3.70D-03 DE=-4.53D-03 OVMax= 7.29D-03
+
+ Cycle   8  Pass 1  IDiag  1:
+ Density matrix breaks symmetry, PCut= 1.00D-04
+ Density matrix has no symmetry -- integrals replicated.
+ E= -1.17003603424856     Delta-E=       -0.000174359322 Rises=F Damp=F AM=F Ri=F Fa=F
+ DIIS: error= 7.93D-04 at cycle   8 NSaved=   8.
+ NSaved= 8 IEnMin= 8 EnMin= -1.17003603424856     IErMin= 8 ErrMin= 7.93D-04
+ ErrMax= 7.93D-04  0.00D+00 EMaxC= 1.00D+00 BMatC= 2.03D-06 BMatP= 8.39D-05
+ Rises=F IDIUse=1 WtCom= 1.00D+00 WtEn= 0.00D+00
+ Coeff-Com: -0.676D-02 0.895D-02 0.641D-04 0.163D-01-0.449D-01 0.874D-01
+ Coeff-Com: -0.400D+00 0.134D+01
+ Coeff:     -0.676D-02 0.895D-02 0.641D-04 0.163D-01-0.449D-01 0.874D-01
+ Coeff:     -0.400D+00 0.134D+01
+ Gap=     0.653 Goal=     0.100 Shift=    0.000
+ RMSDP=1.17D-04 MaxDP=5.29D-04 DE=-1.74D-04 OVMax= 1.07D-03
+
+ Cycle   9  Pass 1  IDiag  1:
+ Density matrix breaks symmetry, PCut= 1.00D-04
+ Density matrix has no symmetry -- integrals replicated.
+ E= -1.17004028867072     Delta-E=       -0.000004254422 Rises=F Damp=F AM=F Ri=F Fa=F
+ DIIS: error= 9.64D-05 at cycle   9 NSaved=   9.
+ NSaved= 9 IEnMin= 9 EnMin= -1.17004028867072     IErMin= 9 ErrMin= 9.64D-05
+ ErrMax= 9.64D-05  0.00D+00 EMaxC= 1.00D+00 BMatC= 3.73D-08 BMatP= 2.03D-06
+ Rises=F IDIUse=1 WtCom= 1.00D+00 WtEn= 0.00D+00
+ Coeff-Com:  0.114D-02-0.180D-02 0.108D-02 0.528D-03-0.209D-02-0.200D-02
+ Coeff-Com:  0.505D-02-0.106D+00 0.110D+01
+ Coeff:      0.114D-02-0.180D-02 0.108D-02 0.528D-03-0.209D-02-0.200D-02
+ Coeff:      0.505D-02-0.106D+00 0.110D+01
+ Gap=     0.653 Goal=     0.100 Shift=    0.000
+ RMSDP=2.11D-05 MaxDP=9.21D-05 DE=-4.25D-06 OVMax= 2.01D-04
+
+ Cycle  10  Pass 1  IDiag  1:
+ E= -1.17006268303461     Delta-E=       -0.000022394364 Rises=F Damp=F AM=F Ri=F Fa=F
+ DIIS: error= 8.56D-06 at cycle  10 NSaved=  10.
+ NSaved=10 IEnMin=10 EnMin= -1.17006268303461     IErMin=10 ErrMin= 8.56D-06
+ ErrMax= 8.56D-06  0.00D+00 EMaxC= 1.00D+00 BMatC= 1.95D-10 BMatP= 3.73D-08
+ Rises=F IDIUse=1 WtCom= 1.00D+00 WtEn= 0.00D+00
+ Coeff-Com: -0.546D-03 0.788D-03-0.273D-03 0.113D-02-0.231D-02 0.320D-02
+ Coeff-Com: -0.172D-01 0.249D-01 0.382D+00 0.609D+00
+ Coeff:     -0.546D-03 0.788D-03-0.273D-03 0.113D-02-0.231D-02 0.320D-02
+ Coeff:     -0.172D-01 0.249D-01 0.382D+00 0.609D+00
+ Gap=     0.653 Goal=     0.100 Shift=    0.000
+ RMSDP=4.27D-06 MaxDP=1.64D-05 DE=-2.24D-05 OVMax= 4.03D-05
+
+ Cycle  11  Pass 1  IDiag  1:
+ E= -1.17003037790773     Delta-E=        0.000032305127 Rises=F Damp=F AM=T Ri=T Fa=F
+ DIIS: error= 4.53D-06 at cycle  11 NSaved=  11.
+ NSaved=11 IEnMin=10 EnMin= -1.17006268303461     IErMin=11 ErrMin= 4.53D-06
+ ErrMax= 4.53D-06  0.00D+00 EMaxC= 1.00D+00 BMatC= 4.15D-11 BMatP= 1.95D-10
+ Rises=T IDIUse=1 WtCom= 1.00D+00 WtEn= 0.00D+00
+ Coeff-Com:  0.109D-04-0.155D-04 0.525D-05-0.162D-04 0.476D-06 0.460D-04
+ Coeff-Com:  0.149D-02-0.299D-02-0.599D-01 0.238D+00 0.823D+00
+ Coeff:      0.109D-04-0.155D-04 0.525D-05-0.162D-04 0.476D-06 0.460D-04
+ Coeff:      0.149D-02-0.299D-02-0.599D-01 0.238D+00 0.823D+00
+ Gap=     0.653 Goal=   None    Shift=    0.000
+ RMSDP=1.42D-06 MaxDP=6.14D-06 DE= 3.23D-05 OVMax= 1.31D-05
+
+ Cycle  12  Pass 1  IDiag  1:
+ E= -1.17004056263174     Delta-E=       -0.000010184724 Rises=F Damp=F AM=T Ri=T Fa=T
+ DIIS: error= 1.80D-07 at cycle  12 NSaved=  12.
+ NSaved=12 IEnMin=10 EnMin= -1.17006268303461     IErMin=12 ErrMin= 1.80D-07
+ ErrMax= 1.80D-07  0.00D+00 EMaxC= 1.00D+00 BMatC= 7.21D-14 BMatP= 4.15D-11
+ Rises=T IDIUse=1 WtCom= 1.00D+00 WtEn= 0.00D+00
+ Coeff-Com: -0.101D-07 0.141D-07-0.472D-08 0.130D-07-0.124D-07-0.109D-07
+ Coeff-Com: -0.758D-06 0.146D-05 0.314D-04 0.366D-01 0.572D-01 0.906D+00
+ Coeff:     -0.101D-07 0.141D-07-0.472D-08 0.130D-07-0.124D-07-0.109D-07
+ Coeff:     -0.758D-06 0.146D-05 0.314D-04 0.366D-01 0.572D-01 0.906D+00
+ Gap=     0.653 Goal=   None    Shift=    0.000
+ RMSDP=4.43D-08 MaxDP=2.01D-07 DE=-1.02D-05 OVMax= 3.53D-07
+
+ Cycle  13  Pass 1  IDiag  1:
+ E= -1.17004036949141     Delta-E=        0.000000193140 Rises=F Damp=F AM=T Ri=T Fa=T
+ DIIS: error= 3.08D-08 at cycle  13 NSaved=  13.
+ NSaved=13 IEnMin=10 EnMin= -1.17006268303461     IErMin=13 ErrMin= 3.08D-08
+ ErrMax= 3.08D-08  0.00D+00 EMaxC= 1.00D+00 BMatC= 2.73D-15 BMatP= 7.21D-14
+ Rises=T IDIUse=1 WtCom= 1.00D+00 WtEn= 0.00D+00
+ SCFDIS: NSaved= 13 BigCof=    0.00 CofMax=   50.00 Det=-6.18D-23
+ Inversion failed.  Reducing to 12 matrices.
+ Coeff-Com: -0.187D-12 0.239D-12-0.584D-11 0.124D-10-0.128D-10-0.187D-10
+ Coeff-Com:  0.321D-09 0.845D-12-0.316D-03 0.151D-02 0.136D+00 0.862D+00
+ Coeff:     -0.187D-12 0.239D-12-0.584D-11 0.124D-10-0.128D-10-0.187D-10
+ Coeff:      0.321D-09 0.845D-12-0.316D-03 0.151D-02 0.136D+00 0.862D+00
+ Gap=     0.653 Goal=   None    Shift=    0.000
+ RMSDP=5.02D-09 MaxDP=1.96D-08 DE= 1.93D-07 OVMax= 3.74D-08
+
+ Cycle  14  Pass 1  IDiag  1:
+ E= -1.17004036966872     Delta-E=       -0.000000000177 Rises=F Damp=F AM=T Ri=T Fa=T
+ DIIS: error= 2.84D-10 at cycle  14 NSaved=  13.
+ NSaved=13 IEnMin= 9 EnMin= -1.17006268303461     IErMin=13 ErrMin= 2.84D-10
+ ErrMax= 2.84D-10  0.00D+00 EMaxC= 1.00D+00 BMatC= 2.76D-19 BMatP= 2.73D-15
+ Rises=T IDIUse=1 WtCom= 1.00D+00 WtEn= 0.00D+00
+ SCFDIS: NSaved= 13 BigCof=    0.00 CofMax=   50.00 Det=-5.57D-28
+ Inversion failed.  Reducing to 12 matrices.
+ SCFDIS: NSaved= 12 BigCof=    0.00 CofMax=   50.00 Det=-5.68D-28
+ Inversion failed.  Reducing to 11 matrices.
+ SCFDIS: NSaved= 11 BigCof=    0.00 CofMax=   50.00 Det=-5.75D-28
+ Inversion failed.  Reducing to 10 matrices.
+ SCFDIS: NSaved= 10 BigCof=    0.00 CofMax=   50.00 Det=-8.70D-28
+ Inversion failed.  Reducing to  9 matrices.
+ SCFDIS: NSaved=  9 BigCof=    0.00 CofMax=   50.00 Det=-9.65D-28
+ Inversion failed.  Reducing to  8 matrices.
+ SCFDIS: NSaved=  8 BigCof=    0.00 CofMax=   50.00 Det=-9.82D-28
+ Inversion failed.  Reducing to  7 matrices.
+ SCFDIS: NSaved=  7 BigCof=    0.00 CofMax=   50.00 Det=-9.85D-28
+ Inversion failed.  Reducing to  6 matrices.
+ SCFDIS: NSaved=  6 BigCof=    0.00 CofMax=   50.00 Det=-1.15D-24
+ Inversion failed.  Reducing to  5 matrices.
+ SCFDIS: NSaved=  5 BigCof=    0.00 CofMax=   50.00 Det=-1.15D-24
+ Inversion failed.  Reducing to  4 matrices.
+ SCFDIS: NSaved=  4 BigCof=    0.00 CofMax=   50.00 Det=-1.15D-24
+ Inversion failed.  Reducing to  3 matrices.
+ Coeff-Com: -0.100D-04-0.768D-02 0.101D+01
+ Coeff:     -0.100D-04-0.768D-02 0.101D+01
+ Gap=     0.653 Goal=   None    Shift=    0.000
+ RMSDP=4.69D-11 MaxDP=1.79D-10 DE=-1.77D-10 OVMax= 3.59D-10
+
+ Converged, but to an energy higher than an earlier iteration.
+ SCF not conv:  E(RCAM-B3LYP) =  -1.17004036967     A.U. after   14 cycles
+            NFock= 14  Conv=0.47D-10     -V/T= 2.0310
+ KE=           1.134823 PE=          -3.638748 EE=           0.618781
+ Convergence failure -- run terminated.
+ Error termination via Lnk1e in /home/hhratchian/gaussian/gdv-20250101-j30+/gdv/local/l502.exe at Sat Aug  2 15:36:11 2025.
+ Job cpu time:       0 days  0 hours  0 minutes 23.3 seconds.
+ Elapsed time:       0 days  0 hours  0 minutes  0.8 seconds.
+ File lengths (MBytes):  RWF=     22 Int=      0 D2E=      0 Chk=      2 Scr=      2

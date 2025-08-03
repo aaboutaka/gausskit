@@ -1,0 +1,3 @@
+gausskit-scheduler.log: Unknown error
+H2O_B3LYP_genecp.log: Error termination via Lnk1e in /home/hhratchian/gaussian/gdv-20250101-j30+/gdv/local/l502.exe at Sat Aug  2 15:30:54 2025.
+H2_CAMB3LYP_631pGdp.log: Error termination via Lnk1e in /home/hhratchian/gaussian/gdv-20250101-j30+/gdv/local/l502.exe at Sat Aug  2 15:36:11 2025.
