@@ -198,7 +198,7 @@ L103:
       Indicates invalid Hessian.
       Restart the optimization using `opt=calcfc` to recalculate force constants.
 
-  Inconsistency: ModMin= N Eigenvalue= MM:
+  "Inconsistency: ModMin= N Eigenvalue= MM":
     error_patterns:
       - "Inconsistency:  ModMin=.*Eigenvalue=.*"
     fix:
@@ -517,22 +517,6 @@ L301:
         - Correct the symbol in the Gen/GenECP block.
         - Avoid using placeholders or misspelled elements.
 
-  Inconsistency #2 in MakNEB:
-    error_patterns:
-      - "Inconsistency #2 in MakNEB"
-    fix:
-      keywords_to_add: []
-      keywords_to_remove:
-        - "iop"
-      lines_to_replace: []
-      checkpoints_required: false
-      inject_into: null
-    notes: |
-      Caused by overuse of `iop` combinations to control symmetry.
-
-      Fix:
-        - Remove manual `iop` settings unless necessary.
-
   No X atoms found in this molecule:
     error_patterns:
       - "No X atoms found in this molecule"
@@ -544,7 +528,7 @@ L301:
       inject_into: null
     notes: |
       You defined a basis or ECP for an atom that isn’t in the geometry.
-
+  
       Fix:
         - Remove the extra atom definition.
 
@@ -591,9 +575,10 @@ L402:
 
 
 L502:
-  Convergence failure –run terminated:
+  "Convergence failure --run terminated":
     error_patterns:
-      - "Convergence failure --run terminated"
+      - "Convergence failure -- run terminated."
+
     fix:
       keywords_to_add:
         - "scf=(qc,conver=8)"
@@ -617,42 +602,15 @@ L502:
 L508:
   Convergence failure:
     error_patterns:
-      - "Convergence failure"
-      - "Gradient too large for Newton-Raphson"
+      - "Convergence failure  "
     fix:
       keywords_to_add:
         - "scf=qc"
-        - "int=ultrafine"
-        - "scf=novaracc"
+        - "int=superfinegrid"
       keywords_to_remove:
         - "scf=xqc"
         - "scf=yqc"
-      lines_to_replace: []
-      checkpoints_required: false
-      inject_into: null
-    notes: |
-      This SCF convergence error is commonly encountered in high-level methods or poorly conditioned geometries.
-
-      Fix:
-        - Add `scf=qc` to enable quadratic convergence.
-        - Use `int=ultrafine` to increase DFT quadrature accuracy.
-        - Try `scf=novaracc` to stabilize the integral accuracy.
-        - If using `scf=xqc` or `scf=yqc`, remove them.
-
-
-L508:
-  Convergence failure:
-    error_patterns:
-      - "Convergence failure"
-      - "Gradient too large for Newton-Raphson"
-    fix:
-      keywords_to_add:
-        - "scf=qc"
-        - "int=ultrafine"
-        - "scf=novaracc"
-      keywords_to_remove:
-        - "scf=xqc"
-        - "scf=yqc"
+        - "int=ultrafinegrid"
       lines_to_replace: []
       checkpoints_required: false
       inject_into: null
@@ -667,7 +625,7 @@ L508:
 
 
 L602:
-  GetVDW: no radius for atom:
+  "GetVDW: no radius for atom":
     error_patterns:
       - "GetVDW:  no radius for atom"
       - "no radius for atom"
@@ -783,7 +741,7 @@ L801:
 
 
 L801:
-  Consistency failure #1 in FindCO:
+  "Consistency failure #1 in FindCO":
     error_patterns:
       - "Consistency failure #1 in FindCO"
     fix:
@@ -1049,7 +1007,7 @@ Other:
         - Lower memory request in input file (%mem).
         - Reduce number of processors if using shared memory nodes.
 
-  galloc: could not allocate memory:
+  "galloc: could not allocate memory":
     error_patterns:
       - "galloc: could not allocate memory"
     fix:

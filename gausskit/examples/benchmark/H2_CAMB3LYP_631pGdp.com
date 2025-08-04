@@ -1,5 +1,5 @@
 %Chk=H2_CAMB3LYP_631pGdp.chk
-#P CAM-B3LYP/6-31+G(d,p) SCF=(fermi,novaracc) Guess=Mix Stable=Opt
+#P CAM-B3LYP/6-31+G(d,p) SCF=(fermi,novaracc) Guess=Mix Stable=Opt scf=(qc,conver=8)
 
 Initial Stability Check for H2
 
@@ -9,16 +9,13 @@ H 0.000000 0.000000 0.740000
 
 --Link1--
 %Chk=H2_CAMB3LYP_631pGdp.chk
-#P CAM-B3LYP chkbasis Geom=AllCheck Guess=Read Opt Freq SCF=(fermi, novaracc) int=superfinegrid
+#P CAM-B3LYP chkbasis Geom=AllCheck Guess=Read Opt Freq SCF=(fermi, novaracc) int=superfinegrid scf=(qc,conver=8)
 
 Optimization and Frequency
 
 --Link1--
 %OldChk=H2_CAMB3LYP_631pGdp.chk
 %Chk=H2_CAMB3LYP_631pGdp-stab.chk
-#P  CAM-B3LYP chkbasis  Geom=AllCheck Guess=Read Stable=Opt SCF=(fermi,novaracc)
+#P CAM-B3LYP chkbasis Geom=AllCheck Guess=Read Stable=Opt SCF=(fermi,novaracc) scf=(qc,conver=8)
 
 Final Stability Check
-
-
-

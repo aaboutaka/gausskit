@@ -4,6 +4,11 @@ import sys
 from itertools import product
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
+from gausskit.utils import HybridCompleter
+from .utils import prompt_and_submit
+
+
+from prompt_toolkit.completion import PathCompleter
 
 from .io import is_gaussian_terminated, extract_homo_lumo_indices
 from .utils import parse_swap_pairs
@@ -109,6 +114,13 @@ def main():
             from .analyze import compare_log_energies
             return compare_log_energies()
 
+
+        if cmd in ("handle", "10"):
+            sys.argv.pop(1)
+            from gausskit.error_fixer import batch_fix_and_report
+            return batch_fix_and_report() 
+
+
         # Meta flags
         if cmd in ("--about", "about"):
             print_about()
@@ -151,7 +163,8 @@ def main():
         "[7] Vibronic Summary Tool\n"
         "[8] Extract XYZ From Log files\n"
         "[9] Energy Comparison for Benchmark Logs\n"
-        "Enter your choice [0–9]: "
+        "[10] Error Handler\n"
+        "Enter your choice [0–10]: "
     ).strip()
 
     if choice == "0":
@@ -179,6 +192,11 @@ def main():
     elif choice == "9":
         from .analyze import compare_log_energies
         compare_log_energies()
+    elif choice == "10":  
+        from gausskit.error_fixer import batch_fix_and_report
+        batch_fix_and_report()
+
+
     
     else:
         print("❌ Invalid choice, exiting.")

@@ -4,7 +4,7 @@
 #SBATCH -J H2O_B3LYP_genecp
 #SBATCH -o H2O_B3LYP_genecp.com.qlog
 #SBATCH -p test
-#SBATCH --time=00:10:00
+#SBATCH --time=00:59:00
 #SBATCH --mem=115200
 #SBATCH --nodes=1
 #SBATCH --ntasks=56
@@ -23,4 +23,4 @@ gdv -m=92GB -p=56 < H2O_B3LYP_genecp.com >& H2O_B3LYP_genecp.log
 # Clean up
 rm -rf $My_Scratch
 
-# Created at 2025-08-02 15:30:52
+# Created at 2025-08-03 21:42:59
