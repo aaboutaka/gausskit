@@ -133,6 +133,7 @@ class GaussianJobScheduler:
         # fallback to primary without waiting
         return self.primary_part
 
+
     def submit_job(self, input_base):
         """
         Submit `input_base`.com via submit_cmd, retrying across partitions until
@@ -143,7 +144,7 @@ class GaussianJobScheduler:
         if not os.path.exists(com):
             print(f"❌ Missing input file: {com}")
             return None
-
+    
         # Build list of partitions to attempt, in order
         parts = []
         if self.quota_enabled:
@@ -155,17 +156,15 @@ class GaussianJobScheduler:
         # remove duplicates
         seen = set()
         parts = [p for p in parts if not (p in seen or seen.add(p))]
-
-        # loop until we either succeed or give up
+    
         while True:
             for part in parts:
-                # enforce quota on primary
                 if self.quota_enabled and part == self.primary_part:
                     cnt = self.count_user_jobs(part)
                     if cnt >= self.max_primary:
                         print(f"⚠️ Primary '{part}' full ({cnt}/{self.max_primary}), skipping.")
                         continue
-
+    
                 if self.submit_cmd.lower() == "hgbatch":
                     cmd = [
                         "Hgbatch",
@@ -185,52 +184,138 @@ class GaussianJobScheduler:
                     ]
                 else:  # direct g16 call or fallback
                     cmd = [self.submit_cmd, com]
-                
-        #        cmd = [
-        #            "Hgbatch",
-        #            "-n",
-        #            str(self.nproc),
-        #            "-p",
-        #            part,
-        #            "-t",
-        #            self.time_limit,
-        #            "--gdv",
-        #            self.gdv,
-        #            com,
-        #        ]
+    
                 result = subprocess.run(cmd, capture_output=True, text=True)
-
+    
                 if result.returncode != 0:
-                    # Hgbatch itself errored out
-                    print(f"❌ Failed to submit {com} on '{part}':\n{result.stderr.strip()}")
+                    print(f"❌ Submission failed (return code ≠ 0) on '{part}':\n{result.stderr.strip()}")
                     return None
-
-                # try to parse the last token as an integer Job ID
-                #out_tokens = result.stdout.strip().split()
-                #jobid = out_tokens[-1] if out_tokens and out_tokens[-1].isdigit() else None
-                match = re.search(r"\b(\d+)\b", result.stdout) 
+    
+                match = re.search(r"\b(\d+)\b", result.stdout)
                 jobid = match.group(1) if match else None
 
-                if not jobid:
-                    print(f"⚠️ No Job ID parsed from output:\n{result.stdout.strip()}")
-
-
-                if jobid:
-                    print(f"✅ Submitted {com} → Job ID {jobid} (partition={part})")
-                    self.submitted_jobs.append((input_base, jobid))
-                    return jobid
+                stderr_lower = result.stderr.lower()
+                if "error" in stderr_lower or "qos" in stderr_lower or "limit" in stderr_lower:
+                    print(f"❌ Submission error in stderr on '{part}':\n{result.stderr.strip()}")
+                    return None
+    
+                if not jobid or jobid in {"0", "00"}:
+                    print(f"⚠️ Invalid or missing Job ID from stdout:\n{result.stdout.strip()}")
+                    print(f"⚠️ STDERR output was:\n{result.stderr.strip()}")
+                    print(f"⚠️ Command used: {' '.join(cmd)}")
                 else:
-                    # no numeric ID → likely partition is full
-                    print(f"⚠️ No Job ID returned on '{part}' — partition probably full.")
+                    print(f"✅ Submitted {com} → Job ID {jobid} (partition={part})")
+                    if jobid and jobid.isdigit() and jobid not in {"0", "00"}:
+                        self.submitted_jobs.append((input_base, jobid))
 
-            # if we tried every partition without ID
+                    return jobid
+    
             if not self.wait_for_slot:
                 print("❌ All partitions full (and wait_for_slot=False). Aborting.")
                 return None
-
-            # wait then retry
+    
             print(f"⏳ Waiting {self.poll_interval}s before retrying submissions…")
             time.sleep(self.poll_interval)
+
+
+#    def submit_job(self, input_base):
+#        """
+#        Submit `input_base`.com via submit_cmd, retrying across partitions until
+#        we get a numeric Job ID (or indefinitely if wait_for_slot=True).
+#        Returns the Job ID string, or None if the submission itself fails.
+#        """
+#        com = f"{input_base}.com"
+#        if not os.path.exists(com):
+#            print(f"❌ Missing input file: {com}")
+#            return None
+#
+#        # Build list of partitions to attempt, in order
+#        parts = []
+#        if self.quota_enabled:
+#            parts.append(self.primary_part)
+#            if self.fallback_part:
+#                parts.append(self.fallback_part)
+#        else:
+#            parts.append(self.partition)
+#        # remove duplicates
+#        seen = set()
+#        parts = [p for p in parts if not (p in seen or seen.add(p))]
+#
+#        # loop until we either succeed or give up
+#        while True:
+#            for part in parts:
+#                # enforce quota on primary
+#                if self.quota_enabled and part == self.primary_part:
+#                    cnt = self.count_user_jobs(part)
+#                    if cnt >= self.max_primary:
+#                        print(f"⚠️ Primary '{part}' full ({cnt}/{self.max_primary}), skipping.")
+#                        continue
+#
+#                if self.submit_cmd.lower() == "hgbatch":
+#                    cmd = [
+#                        "Hgbatch",
+#                        "-n", str(self.nproc),
+#                        "-p", part,
+#                        "-t", self.time_limit,
+#                        "--gdv", self.gdv,
+#                        com,
+#                    ]
+#                elif self.submit_cmd.lower() == "gsub":
+#                    cmd = [
+#                        "gsub",
+#                        "-n", str(self.nproc),
+#                        "-p", part,
+#                        "-t", self.time_limit,
+#                        com,
+#                    ]
+#                else:  # direct g16 call or fallback
+#                    cmd = [self.submit_cmd, com]
+#                
+#        #        cmd = [
+#        #            "Hgbatch",
+#        #            "-n",
+#        #            str(self.nproc),
+#        #            "-p",
+#        #            part,
+#        #            "-t",
+#        #            self.time_limit,
+#        #            "--gdv",
+#        #            self.gdv,
+#        #            com,
+#        #        ]
+#                result = subprocess.run(cmd, capture_output=True, text=True)
+#
+#                if result.returncode != 0:
+#                    # Hgbatch itself errored out
+#                    print(f"❌ Failed to submit {com} on '{part}':\n{result.stderr.strip()}")
+#                    return None
+#
+#                # try to parse the last token as an integer Job ID
+#                #out_tokens = result.stdout.strip().split()
+#                #jobid = out_tokens[-1] if out_tokens and out_tokens[-1].isdigit() else None
+#                match = re.search(r"\b(\d+)\b", result.stdout) 
+#                jobid = match.group(1) if match else None
+#
+#                if not jobid:
+#                    print(f"⚠️ No Job ID parsed from output:\n{result.stdout.strip()}")
+#
+#
+#                if jobid:
+#                    print(f"✅ Submitted {com} → Job ID {jobid} (partition={part})")
+#                    self.submitted_jobs.append((input_base, jobid))
+#                    return jobid
+#                else:
+#                    # no numeric ID → likely partition is full
+#                    print(f"⚠️ No Job ID returned on '{part}' — partition probably full.")
+#
+#            # if we tried every partition without ID
+#            if not self.wait_for_slot:
+#                print("❌ All partitions full (and wait_for_slot=False). Aborting.")
+#                return None
+#
+#            # wait then retry
+#            print(f"⏳ Waiting {self.poll_interval}s before retrying submissions…")
+#            time.sleep(self.poll_interval)
 
     def check_log_tail(self, base, keyword, lines=50):
         """
@@ -653,23 +738,5 @@ def run_job_scheduler():
         submit_cmd=submit_cmd,
     )
     
-#    sched = GaussianJobScheduler(
-#        gs_input=gs,
-#        es_input=es,
-#        fc_input=fc,
-#        poll_interval=60,
-#        nproc=56,
-#        partition="medium",
-#        time_limit="23:50:00",
-#        gdv="gdvj30+",
-#        email_notify=email,
-#        email_address=e_addr,
-#        email_password=e_pass,
-#        quota_enabled=quota,
-#        primary_part=primary,
-#        max_primary=maxp,
-#        fallback_part=fallback,
-#        wait_for_slot=wait_slot,
-#    )
     sched.run(mode, single_input=single)
 
