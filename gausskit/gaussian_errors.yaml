@@ -986,6 +986,27 @@ L9999:
       Fix: Switch to Cartesian coordinates to avoid Z-matrix transformation problems.
 
 
+  "Link 9999 error termination":
+    error_patterns:
+      - "Error termination request processed by link 9999"
+    fix:
+      keywords_to_add: []
+      keywords_to_remove: []
+      lines_to_replace: []
+      checkpoints_required: false
+      inject_into: null
+    notes: |
+      This is a generic catch-all error from Gaussian indicating that something
+      went wrong in a non-specific way. It is often a result of cascading errors
+      or a malformed input file.
+
+      Fix:
+        - Carefully check the log file above this message for earlier errors.
+        - Validate molecule specification, route section, and any custom blocks.
+        - If unclear, try simplifying the calculation or validating inputs using GaussView.
+
+
+
 Other:
   Erroneous write:
     error_patterns:
@@ -1095,5 +1116,6 @@ Other:
         - Ensure Gaussian installation is complete and `g16` is in your PATH.
         - Avoid using `nprocl`, replace with `nprocshared=N` if needed.
 
+ 
 
       

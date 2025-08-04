@@ -136,7 +136,7 @@ def run_pimom_cli():
     # 7) Auto / combine options
     auto_alpha = prompt("Auto-generate alpha permutations? [y/N]: ").strip().lower().startswith('y') or False
     auto_beta  = prompt("Auto-generate beta permutations? [y/N]: ").strip().lower().startswith('y') or False
-#    combine    = prompt("Combine α+β in same file? [y/N]: ").strip().lower().startswith('y') or False
+    combine    =  False
 
     # 8) Writer wrapper that handles opt_choice
     def do_write(a_swaps, b_swaps, charge, multiplicity):
@@ -166,7 +166,7 @@ def run_pimom_cli():
 
     # 9) Handle the different combinations
     # multiple α-swaps + multiple β-swaps
-    if len(alpha_pairs) > 1 and len(beta_pairs) > 1 and not (auto_alpha or auto_beta):
+    if len(alpha_pairs) > 1 or len(beta_pairs) > 1 and not (auto_alpha or auto_beta):
         choice = prompt(
             "Detected multiple α-swaps and multiple β-swaps.\n"
             "  [1] Pair each α with each β (cross-product)\n"
@@ -177,6 +177,7 @@ def run_pimom_cli():
         ).strip() or "1"
 
         if choice == "2":
+            combine = True
             # one file with all α's and all β's
             do_write(alpha_pairs, beta_pairs, charge, multiplicity)
 

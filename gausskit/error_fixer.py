@@ -52,9 +52,18 @@ def load_error_db():
         return yaml.safe_load(f)
 
 
-def extract_log_content(log_path):
-    with open(log_path, "r", errors="ignore") as f:
-        return f.read()
+def extract_log_content(log_path, tail_bytes=10000):
+    with open(log_path, "rb") as f:
+        try:
+            f.seek(-tail_bytes, os.SEEK_END)
+        except OSError:
+            f.seek(0)
+        tail = f.read().decode(errors="ignore")
+    return tail
+
+#def extract_log_content(log_path):
+#    with open(log_path, "r", errors="ignore") as f:
+#        return f.read()
 
 def match_errors(log_text, error_db):
     matched_errors = []
@@ -140,11 +149,24 @@ def fix_and_report(logfile, comfile, resubmit=False):
 
     print("⚠️ Detected the following errors:")
     for link, err, fix, notes in matches:
-        print(f"🔗 [{link}] {err}\n🧠 {notes.strip().splitlines()[0]}\n")
+        print(f"🔗 [{link}] {err}\n🧠 {notes.strip()}\n")
 
     first_fix = matches[0][2]
-    backup = apply_fixes(comfile, first_fix)
-    print(f"\n✅ Applied fix. Backup saved to {backup}")
+    
+    # Skip fix if no meaningful changes required
+    if (
+        not first_fix.get("keywords_to_add")
+        and not first_fix.get("keywords_to_remove")
+        and not first_fix.get("lines_to_replace")
+    ):
+        print("ℹ️ No fixable keywords or modifications needed — skipping .com rewrite.")
+    else:
+        backup = apply_fixes(comfile, first_fix)
+        print(f"\n✅ Applied fix. Backup saved to {backup}")
+    
+#    first_fix = matches[0][2]
+#    backup = apply_fixes(comfile, first_fix)
+#    print(f"\n✅ Applied fix. Backup saved to {backup}")
 
     if resubmit:
         prompt_and_submit(comfile)
