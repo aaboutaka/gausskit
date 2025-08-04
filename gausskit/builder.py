@@ -9,10 +9,11 @@ def write_pimom_input(
     charge,
     multiplicity,
     method,
+    add_noxctest= False,
     footer=None,
     include_func_in_name=True,
     custom_oldchk=None,
-    include_optfreq=False,    # <— new flag
+    include_optfreq=False,
     suffix_tag=""):
     """
     Generates a Gaussian .com file performing PIMOM swaps.
@@ -43,6 +44,9 @@ def write_pimom_input(
         route += " Opt Freq"
     route += " scf=(pimom,fermi,novaracc)"
     route += " integral=SuperFineGrid guess=(alter,read) geom=check chkbasis"
+    if add_noxctest:
+        route += " int=noxctest"
+
 
     # 4) Write .com
     with open(comfile, "w") as f:

@@ -3,8 +3,8 @@
 #SBATCH --mail-type=ALL
 #SBATCH -J H2_CAMB3LYP_631pGdp
 #SBATCH -o H2_CAMB3LYP_631pGdp.qlog
-#SBATCH -p medium
-#SBATCH --time=23:50:00
+#SBATCH -p test
+#SBATCH --time=00:10:00
 #SBATCH --mem=115200
 #SBATCH --nodes=1
 #SBATCH --ntasks=56
@@ -19,4 +19,4 @@ gdv -m=92GB -p=56 < H2_CAMB3LYP_631pGdp.com >& H2_CAMB3LYP_631pGdp.log
 
 rm -rf $My_Scratch
 
-# Submitted at 2025-08-04 07:23:11
+# Submitted at 2025-08-04 07:56:01

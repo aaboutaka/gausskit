@@ -598,6 +598,29 @@ L502:
         - If error persists, try a better guess (e.g., `guess=read` from a previous checkpoint).
 
 
+  Inaccurate quadrature in CalDSu:
+    error_patterns:
+      - "Inaccurate quadrature in CalDSu"
+    fix:
+      keywords_to_add:
+        - "int=superfinegrid"
+        - "int=noxctest"
+      keywords_to_remove:
+        - "int=ultrafine"
+        - "int=ultrafinegrid"
+        - "int=grid=sg1"
+      lines_to_replace: []
+      checkpoints_required: false
+      inject_into: "route"
+    notes: |
+      This error indicates a failure in numerical integration during DFT due to insufficient grid accuracy.
+
+      Fix:
+        - Add `int=ultrafine` to increase the quadrature grid precision.
+        - Include `scf=novaracc` to enhance numerical stability.
+        - Remove coarse or SG1 grid settings if present.
+
+
 
 L508:
   Convergence failure:
