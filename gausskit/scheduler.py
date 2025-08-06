@@ -8,6 +8,7 @@ import smtplib
 import ssl
 import getpass
 from email.message import EmailMessage
+import signal
 
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter, PathCompleter
@@ -26,6 +27,9 @@ def daemonize(logfile="gausskit-scheduler.log"):
     os.setsid()
     if os.fork() > 0:
         os._exit(0)
+    # Ignore SIGHUP (like nohup does)
+    signal.signal(signal.SIGHUP, signal.SIG_IGN)
+
     fd = os.open(logfile, os.O_CREAT | os.O_APPEND | os.O_WRONLY, 0o644)
     os.dup2(fd, sys.stdout.fileno())
     os.dup2(fd, sys.stderr.fileno())

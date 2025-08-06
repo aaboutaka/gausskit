@@ -1,7 +1,154 @@
 import re
+from prompt_toolkit.completion import Completer, PathCompleter, Completion, FuzzyCompleter, WordCompleter
+import os
 
-from prompt_toolkit.completion import Completer, PathCompleter, Completion
-from prompt_toolkit.completion import FuzzyCompleter, WordCompleter
+import os
+import re
+
+import os
+import re
+
+import os
+import re
+
+def rename_logs_from_inputs():
+    base_name = input("Enter base molecule name (e.g., N2): ").strip()
+    include_mult = input("Include multiplicity in filename? (y/n) [y]: ").strip().lower() in ['', 'y', 'yes']
+    dry_run = input("Dry run (preview only, no rename)? (y/n) [y]: ").strip().lower() in ['', 'y', 'yes']
+
+    same_func = input("Do all files share the same functional? (y/n) [y]: ").strip().lower() in ['', 'y', 'yes']
+    same_basis = input("Do all files share the same basis set? (y/n) [y]: ").strip().lower() in ['', 'y', 'yes']
+    same_mult = include_mult and input("Do all files share the same multiplicity? (y/n) [y]: ").strip().lower() in ['', 'y', 'yes']
+
+    detection_mode_func = input(
+        "How should I get the functional?\n"
+        "[1] Auto-detect from .com/.gjf or .log file (default)\n"
+        "[2] Manual input\n"
+        "Choice: "
+    ).strip()
+
+    detection_mode_basis = input(
+        "How should I get the basis set?\n"
+        "[1] Auto-detect from .com/.gjf or .log file (default)\n"
+        "[2] Manual input\n"
+        "Choice: "
+    ).strip()
+
+    detection_mode_mult = input(
+        "How should I get the multiplicity?\n"
+        "[1] Auto-detect from .com/.gjf or .log file (default)\n"
+        "[2] Manual input\n"
+        "Choice: "
+    ).strip()
+
+    functional, basis, mult = None, None, None
+    if detection_mode_func == '2' and same_func:
+        functional = input("Enter functional (e.g., wb97xd): ").strip()
+    if detection_mode_basis == '2' and same_basis:
+        basis = input("Enter basis set (e.g., def2TZVP): ").strip()
+    if detection_mode_mult == '2' and same_mult:
+        mult = input("Enter multiplicity (e.g., 1): ").strip()
+
+    # Gather input files
+    input_files = [f for f in os.listdir() if f.endswith((".com", ".gjf"))]
+    if not input_files:
+        print("❌ No .com or .gjf files found.")
+        return
+
+    renamed = 0
+    rename_log = []
+    for infile in input_files:
+        try:
+            with open(infile, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()
+        except Exception as e:
+            print(f"❌ Error reading {infile}: {e}")
+            continue
+
+        this_func = functional
+        this_basis = basis
+        this_mult = mult
+
+        log_lines = []
+        route = ""
+        fallback_checked = False
+        if any(mode in ['', '1'] for mode in [detection_mode_func, detection_mode_basis, detection_mode_mult]):
+            route_lines = [l for l in lines if l.strip().startswith('#')]
+            route = " ".join(route_lines)
+
+            if not route:
+                log_file = os.path.splitext(infile)[0] + ".log"
+                if os.path.exists(log_file):
+                    try:
+                        with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+                            log_lines = f.readlines()
+                            route = " ".join([l for l in log_lines if l.strip().startswith('#')])
+                    except Exception as e:
+                        print(f"❌ Error reading {log_file}: {e}")
+                        continue
+                fallback_checked = True
+
+        if same_func and detection_mode_func in ['', '1']:
+            fm = re.search(r'#\S*\s*([A-Za-z0-9\-]+)\s', route)
+            this_func = fm.group(1) if fm else input(f"Functional not found in {infile}. Enter manually: ").strip()
+
+        if same_basis and detection_mode_basis in ['', '1']:
+            if "genecp" in route.lower():
+                this_basis = "genecp"
+            elif "gen" in route.lower():
+                this_basis = "gen"
+            else:
+                bm = re.search(r'\s([A-Za-z0-9\-\+]+)/([A-Za-z0-9\-\+]+)', route)
+                this_basis = bm.group(2) if bm else input(f"Basis set not found in {infile}. Enter manually: ").strip()
+
+        if include_mult and same_mult and detection_mode_mult in ['', '1']:
+            for line in lines:
+                if re.match(r"^\s*[-+]?\d+\s+[-+]?\d+", line.strip()):
+                    this_mult = line.strip().split()[1]
+                    break
+            if not this_mult and fallback_checked and log_lines:
+                for line in log_lines:
+                    if re.match(r"^\s*[-+]?\d+\s+[-+]?\d+", line.strip()):
+                        this_mult = line.strip().split()[1]
+                        break
+            if not this_mult:
+                this_mult = input(f"Multiplicity not found in {infile}. Enter manually: ").strip()
+
+        if not this_func or not this_basis:
+            print(f"❌ Missing functional or basis set for {infile}. Skipping.")
+            continue
+
+        parts = [base_name, this_func, this_basis]
+        if include_mult and this_mult:
+            parts.append(f"m{this_mult}")
+        new_base = "_".join(map(str, parts))
+
+        extensions = [".log", ".chk", ".qlog", ".sbatch"]
+        basename = os.path.splitext(infile)[0]
+
+        for ext in extensions:
+            original = basename + ext
+            if os.path.exists(original):
+                new_name = new_base + ext
+                rename_log.append((original, new_name))
+                if dry_run:
+                    print(f"🔍 Would rename: {original} → {new_name}")
+                else:
+                    try:
+                        os.rename(original, new_name)
+                        print(f"✅ Renamed: {original} → {new_name}")
+                        renamed += 1
+                    except Exception as e:
+                        print(f"❌ Failed to rename {original}: {e}")
+
+    if dry_run:
+        print(f"\n🔎 Dry run complete. {len(rename_log)} renames previewed.")
+    else:
+        print(f"\n✅ Finished. Total renamed: {renamed}")
+        with open("rename_log_summary.txt", "w") as f:
+            for old, new in rename_log:
+                f.write(f"{old} → {new}\n")
+        print("📝 Log written to rename_log_summary.txt")
 
 class HybridCompleter(FuzzyCompleter):
     def __init__(self, completers):

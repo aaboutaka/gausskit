@@ -388,7 +388,9 @@ def main():
         "[8] Extract XYZ From Log files\n"
         "[9] Energy Comparison for Benchmark Logs\n"
         "[10] Error Handler\n"
-        "Enter your choice [0–10]: "
+        "[11] Rename log files\n"
+        "[12] Scan Generator (Z-Matirx) \n"
+        "Enter your choice [0–12]: "
     ).strip()
 
     if choice == "0":
@@ -419,6 +421,14 @@ def main():
     elif choice == "10":  
         from gausskit.error_fixer import batch_fix_and_report
         batch_fix_and_report()
+    elif choice == "11":
+        from .utils import rename_logs_from_inputs
+        rename_logs_from_inputs()
+    elif choice == "12":
+        from .generator import generate_zmatrix_scan_inputs
+        generate_zmatrix_scan_inputs()
+
+
 
 
     

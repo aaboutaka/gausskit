@@ -595,4 +595,139 @@ def extract_xyz_cli():
 
         print(f"✅ Extracted XYZ written to: {outname}")
 
+import os
+from prompt_toolkit import prompt
+from .utils import MultiPathCompleter  # For tab-completion of file paths
+
+def generate_zmatrix_scan_inputs():
+    """
+    Generate a series of Gaussian Z-matrix input files by scanning internal variables
+    (e.g., B1, A1, D1) defined in a Z-matrix input file.
+
+    ✦ Input file:
+        - Must contain geometry using variables (e.g., R1, A1, D1)
+        - Must include assignments like R1=1.9, A1=120.0, etc.
+        - ❗ Does NOT need to contain the "Variables:" header — it is handled internally.
+
+    ✦ Output:
+        - A folder with multiple .com files (one per step)
+        - Each .com file contains:
+            - Gaussian header (%chk, route, title, charge/mult)
+            - Z-matrix geometry (unchanged)
+            - The scanned variable values (without "Variables:" line)
+        - A scan_summary.txt with details of variable values per step.
+    """
+
+    # === 1. Prompt for basic metadata ===
+    scan_name = prompt("Enter scan name (e.g., scan1): ").strip() or "scan1"
+    input_file = prompt("Enter path to Z-matrix .com file: ", completer=MultiPathCompleter()).strip()
+    if not os.path.exists(input_file):
+        print("❌ File not found.")
+        return
+
+    route = prompt("Enter Gaussian route section [# opt b3lyp/def2TZVP]: ").strip() or "# opt b3lyp/def2TZVP"
+    charge = prompt("Enter molecular charge [0]: ").strip() or "0"
+    mult = prompt("Enter multiplicity [1]: ").strip() or "1"
+
+    # === 2. Prompt for variables to scan ===
+    labels = {}  # label → {start, step, steps}
+    for scan_type in ['Bond', 'Angle', 'Dihedral']:
+        label_input = prompt(f"Enter {scan_type} label(s) to scan (e.g., B1,B2), or press Enter to skip: ").strip()
+        if label_input:
+            start_val = float(prompt(f"Enter starting value for all {scan_type}s: "))
+            end_val = float(prompt(f"Enter final value for all {scan_type}s: "))
+            step_val = float(prompt(f"Enter step size for all {scan_type}s: "))
+
+            # Auto-calculate number of steps (inclusive)
+            n_steps = int(round((end_val - start_val) / step_val)) + 1
+
+            for lbl in label_input.split(','):
+                labels[lbl.strip()] = {
+                    "start": start_val,
+                    "step": step_val,
+                    "steps": n_steps
+                }
+
+    if not labels:
+        print("❌ No scan labels provided.")
+        return
+
+    # === 3. Validate that all scanned variables use the same number of steps ===
+    step_counts = {v['steps'] for v in labels.values()}
+    if len(step_counts) != 1:
+        print("❌ All scanned variables must use the same number of steps. Detected:", step_counts)
+        return
+    n_steps = step_counts.pop()
+
+    # === 4. Read and split input file ===
+    with open(input_file, 'r') as f:
+        lines = f.read().splitlines()
+
+    # Find start of variable assignments (e.g., lines like R1=1.9)
+    var_start_index = None
+    for i, line in enumerate(lines):
+        if '=' in line and len(line.strip().split('=')) == 2:
+            var_start_index = i
+            break
+
+    if var_start_index is None:
+        print("❌ No variable assignment lines found (e.g., R1=1.90).")
+        return
+
+    # Split into geometry and variable lines
+    geom_lines = lines[:var_start_index]
+    var_lines_original = lines[var_start_index:]
+
+    # === 5. Output directory ===
+    scan_dir = f"{scan_name}_scan_inputs"
+    os.makedirs(scan_dir, exist_ok=True)
+
+    summary_lines = []
+
+    # === 6. Loop over steps and generate files ===
+    for i in range(n_steps):
+        # Compute values for this step
+        step_vars = {
+            lbl: val['start'] + val['step'] * i
+            for lbl, val in labels.items()
+        }
+
+        # Reconstruct variable assignments
+        new_var_lines = []
+        for line in var_lines_original:
+            parts = line.strip().split('=')
+            if len(parts) == 2:
+                var_name = parts[0].strip()
+                if var_name in step_vars:
+                    new_var_lines.append(f"{var_name}={step_vars[var_name]:.6f}")
+                else:
+                    new_var_lines.append(line.strip())
+            else:
+                new_var_lines.append(line.strip())
+
+        # Compose full .com file content (no "Variables:" line)
+        chk_name = f"{scan_name}_step{i+1:02}.chk"
+        out_file = os.path.join(scan_dir, f"{scan_name}_step{i+1:02}.com")
+        with open(out_file, 'w') as f:
+            f.write(
+                f"%chk={chk_name}\n{route}\n\n{scan_name} step {i+1}\n\n"
+                f"{charge} {mult}\n"
+                + "\n".join(geom_lines).strip() + "\n\n"
+                + "\n".join(new_var_lines) + "\n\n"
+            )
+
+        # Add to summary log
+        summary_lines.append(
+            f"{os.path.basename(out_file)}: " +
+            ", ".join(f"{k}={v:.6f}" for k, v in step_vars.items())
+        )
+
+    # === 7. Write scan summary log ===
+    summary_file = os.path.join(scan_dir, "scan_summary.txt")
+    with open(summary_file, 'w') as f:
+        f.write("Generated scan files:\n\n")
+        f.write("\n".join(summary_lines))
+
+    print(f"\n✅ Generated {n_steps} input files in {scan_dir}")
+    print(f"📝 Summary written to {summary_file}")
 

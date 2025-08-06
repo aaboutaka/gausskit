@@ -127,10 +127,38 @@ def extract_log_summary(logfile):
         if m:
             st, en, fstr = m.groups()
             summary['excitations'].append((int(st), float(en), float(fstr)))
-        if '<S**2>' in line:
-            sm = re.search(r'<S\*\*2>\s*=\s*([\d\.]+)', line)
-            if sm:
-                summary['spin_contam'] = float(sm.group(1))
+        # Track candidate S² values
+        spin_vals = []
+        
+        # Detect SCF Done blocks to look nearby for <S**2>
+        if "SCF Done:" in line:
+            # Look ahead a few lines
+            for j in range(1, 6):
+                if i + j >= len(lines):
+                    break
+                lookahead = lines[i + j]
+                if "<S**2>" in lookahead:
+                    sm = re.search(r'<S\*\*2>\s*=\s*([\d\.]+)', lookahead)
+                    if sm:
+                        val = float(sm.group(1))
+                        spin_vals.append(val)
+#                        print(f"🔍 [DEBUG] Found ⟨S²⟩ = {val:.4f} in lookahead (line {i + j + 1}) after SCF Done")
+#                        print(f"      ↳ Line: {lookahead.strip()}")
+                        break
+        
+        # Match line like: S**2 before annihilation    24.2562,   after    45.5039
+        if "S**2 before annihilation" in line:
+            match = re.search(r'before\s+([\d\.]+),\s+after\s+([\d\.]+)', line)
+            if match:
+                before_val = float(match.group(1))
+                after_val  = float(match.group(2))
+                spin_vals.append(after_val)
+       #         print(f"🔍 [DEBUG] Found ⟨S²⟩ = {after_val:.4f} from annihilation line (line {i+1})")
+       #         print(f"      ↳ Line: {line.strip()}")
+        if spin_vals:
+            summary['spin_contam'] = spin_vals[-1]  # use last seen value (often final)
+
+        
 
         # --- Convergence Forces ---
         if 'Maximum Force' in text and 'Threshold' in text:
@@ -416,6 +444,19 @@ def compare_log_energies():
             groups.append(f"{func}_{basis}")
         if comparison_mode in ["2", "3"]:
             groups.append(mol)
+
+        from .analyze import extract_log_summary  # add this at the top of the function
+
+        summary = extract_log_summary(log)
+        spin_s2 = summary.get("spin_contam")
+        multiplicity = summary.get("multiplicity")
+        ideal_s2 = None
+        delta_s2 = None
+        if spin_s2 is not None and multiplicity is not None:
+            ideal_s2 = ((multiplicity - 1) * (multiplicity + 1)) / 4
+            delta_s2 = spin_s2 - ideal_s2
+
+
         
         record = {
             "Filename": log,
@@ -424,7 +465,10 @@ def compare_log_energies():
             "BasisSet": basis,
             "Group": groups[0] if groups else "Unknown",
             "Energy (Hartree)": energy,
-            "Extras": extras
+            "Extras": extras,
+            "⟨S²⟩": spin_s2,
+            "⟨S²⟩ Ideal": ideal_s2,
+            "Δ⟨S²⟩": delta_s2
         }
         data.append(record)
         for g in groups:
@@ -438,9 +482,13 @@ def compare_log_energies():
     all_rows = []
     excel_sheets = {}
 
+    all_rows = []
+    excel_sheets = {}
+
     for group, entries in group_dict.items():
         entries.sort(key=lambda r: r["Energy (Hartree)"])
-        ref_energy = entries[0]["Energy (Hartree)"]
+        ref = entries[0]
+        ref_energy = ref["Energy (Hartree)"]
 
         print(f"\n📊 Group: {group} — {len(entries)} entries")
         print(f"{'Filename':<40} {'ΔE (Ha)':>12} {'ΔE (eV)':>10}")
@@ -449,19 +497,41 @@ def compare_log_energies():
         for rec in entries:
             delta_h = rec["Energy (Hartree)"] - ref_energy
             delta_ev = hartree_to_ev(delta_h)
+
+            # S² values
+            s2_rec = rec.get("⟨S²⟩")
+            s2_ideal_rec = rec.get("⟨S²⟩ Ideal")
+            s2_ref = ref.get("⟨S²⟩")
+            s2_ideal_ref = ref.get("⟨S²⟩ Ideal")
+            delta_s2_rec = s2_rec - s2_ideal_rec if s2_rec is not None and s2_ideal_rec is not None else None
+            delta_s2_ref = s2_ref - s2_ideal_ref if s2_ref is not None and s2_ideal_ref is not None else None
+
             row = {
                 "Filename": rec["Filename"],
+                "Reference": ref["Filename"],
                 "Molecule": rec["Molecule"],
                 "Functional": rec["Functional"],
                 "BasisSet": rec["BasisSet"],
                 "Energy (Hartree)": rec["Energy (Hartree)"],
                 "ΔE (Hartree)": delta_h,
-                "ΔE (eV)": delta_ev
+                "ΔE (eV)": delta_ev,
+                "⟨S²⟩ (This)": s2_rec,
+                "⟨S²⟩ Ideal (This)": s2_ideal_rec,
+                "Δ⟨S²⟩ (This)": delta_s2_rec,
+                "⟨S²⟩ (Ref)": s2_ref,
+                "⟨S²⟩ Ideal (Ref)": s2_ideal_ref,
+                "Δ⟨S²⟩ (Ref)": delta_s2_ref
             }
+
             group_data.append(row)
             all_rows.append(row)
-            print(f"{rec['Filename']:<40} {delta_h:>12.6f} {delta_ev:>10.4f}")
 
+            print(f"{rec['Filename']:<30} vs {ref['Filename']:<30}")
+            print(f"  ΔE: {delta_h:>10.6f} Ha = {delta_ev:>8.4f} eV")
+            print(f"  ⟨S²⟩ (This) : {s2_rec:.4f}   Ideal: {s2_ideal_rec:.4f}   Δ: {delta_s2_rec:.4f}" if s2_rec is not None else "  ⟨S²⟩ (This) : N/A")
+            print(f"  ⟨S²⟩ (Ref)  : {s2_ref:.4f}   Ideal: {s2_ideal_ref:.4f}   Δ: {delta_s2_ref:.4f}" if s2_ref is not None else "  ⟨S²⟩ (Ref)  : N/A")
+            print("-" * 80)
+            
         plot_group(group, group_data)
         if save_results:
             df_group = pd.DataFrame(group_data)
@@ -501,138 +571,3 @@ def compare_log_energies():
  
 
 
-#def compare_log_energies():
-#    """
-#    Energy Extraction & Comparison Tool for Benchmarking.
-#    Extracts SCF, ZPE, or MP2 energies from .log files and compares relative to the lowest energy.
-#    Supports optional pandas output (CSV/XLSX).
-#    """
-#    import os
-#    import re
-#    from prompt_toolkit import prompt
-#
-#    try:
-#        import pandas as pd
-#        has_pandas = True
-#    except ImportError:
-#        has_pandas = False
-#
-#    def is_gaussian_terminated(filepath, lines_to_check=20):
-#        try:
-#            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-#                return any("Normal termination of Gaussian" in line for line in f.readlines()[-lines_to_check:])
-#        except Exception as e:
-#            print(f"⚠️ Error reading {filepath}: {e}")
-#            return False
-#
-#    def extract_energy(filepath, method="scf"):
-#        energy = None
-#        raw = []
-#        method = method.lower()
-#        try:
-#            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-#                lines = f.readlines()
-#        except Exception as e:
-#            print(f"⚠️ Error reading {filepath}: {e}")
-#            return None, None
-#
-#        if method == "zpe":
-#            for line in lines:
-#                if "Sum of electronic and zero-point Energies=" in line:
-#                    match = re.search(r"= *(-?\d+\.\d+)", line)
-#                    if match:
-#                        energy = float(match.group(1))
-#                        break
-#        elif method == "scf":
-#            for line in lines:
-#                if "SCF Done" in line:
-#                    match = re.search(r'SCF Done:\s+E\([^)]+\)\s*=\s*(-?\d+\.\d+)', line)
-#                    if match:
-#                        raw.append(float(match.group(1)))
-#            if raw:
-#                energy = raw[-1]
-#        elif method in ("mp2", "pm2", "pmp2", "pmp2-0"):
-#            last_lines = lines[-100:]
-#            combined = ''.join(line.strip() for line in last_lines)
-#            pattern = rf'\\{method.upper()}[-0]*=([-]?\d+\.\d+)'
-#            match = re.search(pattern, combined)
-#            if match:
-#                energy = float(match.group(1))
-#            else:
-#                print(f"❌ Could not find {method.upper()} energy in {filepath}")
-#        else:
-#            raise ValueError(f"Unsupported energy method: {method}")
-#        return energy, raw[-2:] if raw else None
-#
-#    def hartree_to_ev(h):
-#        return h * 27.2114
-#
-#    print("=" * 60)
-#    print("    Energy Extraction & Comparison for Benchmarking")
-#    print("=" * 60)
-#
-#    # --- 🧾 All Inputs Upfront ---
-#    match_input = prompt("Enter substrings to match filenames (comma-separated or 'all') [default: all]: ").strip()
-#    match_strs = [] if not match_input or match_input.lower() == "all" else match_input.split(",")
-#
-#    method = prompt("Energy method [scf/zpe/mp2/pm2/pmp2] (default: scf): ").strip().lower() or "scf"
-#    exclude = prompt("Exclude files with substring? (press ENTER to skip): ").strip() or None
-#    save_results = False
-#    if has_pandas:
-#        save_results = prompt("Save results to CSV/Excel? (y/n): ").strip().lower().startswith("y")
-#
-#    # --- 📂 Collect files ---
-#    all_logs = [f for f in os.listdir('.') if f.endswith(".log") and (exclude not in f if exclude else True)]
-#    if not match_strs:
-#        grouped_logs = {"ALL": all_logs}
-#    else:
-#        grouped_logs = {m: [f for f in all_logs if m in f] for m in match_strs}
-#
-#    # --- 🧪 Process ---
-#    for match_str, log_files in grouped_logs.items():
-#        results = []
-#        for log in log_files:
-#            if not is_gaussian_terminated(log):
-#                continue
-#            energy, extras = extract_energy(log, method=method)
-#            if energy is not None:
-#                results.append((log, energy, extras))
-#
-#        if not results:
-#            print(f"❌ No valid energies found for match: {match_str}")
-#            continue
-#
-#        ref_file, ref_energy, _ = min(results, key=lambda x: x[1])
-#
-#        print(f"\n📋 {method.upper()} Energy Comparison for match '{match_str}' (reference: {ref_file})")
-#        print(f"{'Filename':<40} {'Energy (Ha)':>15} {'ΔE (Ha)':>12} {'ΔE (eV)':>10}")
-#        print("-" * 80)
-#
-#        data = []
-#        for fname, energy, extras in results:
-#            delta_h = energy - ref_energy
-#            delta_ev = hartree_to_ev(delta_h)
-#            data.append({
-#                'Filename': fname,
-#                'Energy (Hartree)': energy,
-#                'ΔE (Hartree)': delta_h,
-#                'ΔE (eV)': delta_ev,
-#                'Info': extras
-#            })
-#
-#        for row in sorted(data, key=lambda r: r['ΔE (eV)']):
-#            print(f"{row['Filename']:<40} {row['Energy (Hartree)']:>15.6f} {row['ΔE (Hartree)']:>12.6f} {row['ΔE (eV)']:>10.4f}")
-#
-#        # 🧾 Save if requested
-#        if save_results and has_pandas:
-#            df = pd.DataFrame(data)
-#            df.sort_values(by='ΔE (eV)', inplace=True)
-#            df.reset_index(drop=True, inplace=True)
-#            base = f'energy_{method}_{match_str.strip().replace(" ", "_")}'
-#            df.to_excel(base + '.xlsx', index=False)
-#            df.to_csv(base + '.csv', index=False)
-#            print(f"✅ Saved to {base}.xlsx and {base}.csv")
-#        elif not has_pandas:
-#            print("ℹ️ pandas not installed — Excel and CSV output skipped.")
-#
-#
