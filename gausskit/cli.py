@@ -389,7 +389,7 @@ def main():
         "[9] Energy Comparison for Benchmark Logs\n"
         "[10] Error Handler\n"
         "[11] Rename log files\n"
-        "[12] Scan Generator (Z-Matirx) \n"
+        "[12] Scan Generator (Z-Matrix)\n"
         "Enter your choice [0–12]: "
     ).strip()
 
