@@ -403,6 +403,9 @@ D 1 1.00
 F 1 1.00
  0.0859800 1.0
 ****
+-H  B  C  N  O  F  P  S  Cl 0
+aug-cc-pVTz
+****
 -O 0
 aug-cc-pVTz
 ****

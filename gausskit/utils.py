@@ -440,3 +440,25 @@ def add_modredundant_to_opt(route):
 
     return " ".join(new_words)
 
+
+def extract_scan_variables_from_com(comfile):
+    """Extract scan variable values from a corresponding .com file."""
+    var_values = {}
+    try:
+        with open(comfile, 'r', encoding='utf-8', errors='ignore') as f:
+            lines = f.readlines()
+        for line in lines:
+            if '=' in line:
+                parts = line.strip().split('=')
+                if len(parts) == 2:
+                    key = parts[0].strip()
+                    try:
+                        val = float(parts[1].strip())
+                        var_values[key] = val
+                    except ValueError:
+                        pass
+    except Exception:
+        pass
+    return var_values
+
+

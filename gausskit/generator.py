@@ -651,7 +651,7 @@ def generate_zmatrix_scan_inputs():
     
         if choice in ['', 'o', 'overwrite']:
             # Overwrite: clear the existing folder
-            import shutil
+#            import shutil
             try:
                 shutil.rmtree(scan_dir)
                 print(f"🧹 Removed existing folder '{scan_dir}'.")
@@ -861,7 +861,7 @@ def generate_zmatrix_scan_inputs():
                 f.write("\n" + "\n".join(f"{v} F" for v in frozen_vars))
         
             if basis_block:
-                f.write("\n" + basis_block.strip())
+                f.write(basis_block.strip())
         
             f.write("\n")  # Final newline
         

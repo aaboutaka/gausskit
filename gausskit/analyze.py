@@ -4,6 +4,17 @@ import csv
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import PathCompleter
 from gausskit.completions import tab_autocomplete_prompt
+import pandas as pd
+import matplotlib.pyplot as plt
+from collections import defaultdict
+from .utils import (
+    is_gaussian_terminated,
+    extract_scan_variables_from_com,
+    extract_energy,
+    hartree_to_ev,
+    MultiPathCompleter
+)
+
 
 def extract_log_summary(logfile):
     """
@@ -569,5 +580,123 @@ def compare_log_energies():
                 f.write(f"{log}: {reason}\n")
         print(f"⚠️ Skipped {len(skipped_logs)} files. See 'skipped_logs_summary.txt'.")
  
+
+def analyze_zmatrix_scan_logs():
+    """
+    Analyze Gaussian log files from Z-matrix scan.
+    - Extracts SCF or chosen energy method
+    - Pulls scan variables from associated .com files
+    - Verifies normal termination
+    - Saves summary CSV, Excel
+    - Plots ΔE vs step and optional 2D heatmap
+    """
+
+    scan_dir = prompt("Enter scan folder name (e.g., scan1_scan_inputs): ",
+                      completer=MultiPathCompleter()).strip()
+    if not os.path.isdir(scan_dir):
+        print("❌ Folder not found.")
+        return
+
+    method = prompt("Energy method [scf/zpe/mp2/pm2/pmp2/td] (default: scf): ").strip().lower() or "scf"
+    if method not in ["scf", "zpe", "mp2", "pm2", "pmp2", "td"]:
+        print("⚠️ Unsupported method. Using default SCF.")
+        method = "scf"
+
+    log_files = sorted(f for f in os.listdir(scan_dir) if f.endswith(".log"))
+    if not log_files:
+        print("❌ No log files found.")
+        return
+
+    records = []
+    skipped = []
+
+    for log in log_files:
+        log_path = os.path.join(scan_dir, log)
+        com_path = log_path.replace(".log", ".com")
+
+        if not is_gaussian_terminated(log_path):
+            skipped.append((log, "Not normally terminated"))
+            continue
+
+        energy, _ = extract_energy(log_path, method)
+        if energy is None:
+            skipped.append((log, "Energy extraction failed"))
+            continue
+
+        var_values = extract_scan_variables_from_com(com_path)
+        records.append({
+            "LogFile": log,
+            "Energy (Hartree)": energy,
+            **var_values
+        })
+
+    if not records:
+        print("❌ No valid logs parsed.")
+        return
+
+    df = pd.DataFrame(records)
+    ref_energy = df["Energy (Hartree)"].min()
+    df["ΔE (eV)"] = df["Energy (Hartree)"].apply(lambda x: hartree_to_ev(x - ref_energy))
+
+    # Sort and export
+    scan_name = os.path.basename(scan_dir.rstrip("/"))
+    var_cols = [col for col in df.columns if col not in ["LogFile", "Energy (Hartree)", "ΔE (eV)"]]
+    df.sort_values(by=var_cols, inplace=True)
+
+    out_csv = os.path.join(scan_dir, f"{scan_name}_scan_summary.csv")
+    out_xlsx = os.path.join(scan_dir, f"{scan_name}_scan_summary.xlsx")
+    df.to_csv(out_csv, index=False)
+    df.to_excel(out_xlsx, index=False)
+
+    print(f"\n✅ Scan analysis saved to:\n- {out_csv}\n- {out_xlsx}")
+
+    # === Plot ΔE vs step index ===
+    plt.figure()
+    plt.plot(range(1, len(df) + 1), df["ΔE (eV)"], marker='o')
+    plt.xlabel("Step Index")
+    plt.ylabel("ΔE (eV)")
+    plt.title("ΔE vs Step Index")
+    plt.grid(True)
+    step_plot = os.path.join(scan_dir, f"{scan_name}_deltaE_vs_step.png")
+    plt.savefig(step_plot, dpi=300)
+    plt.close()
+    print(f"📈 Step plot saved to {step_plot}")
+
+    # === If 1 variable, also plot ΔE vs that variable ===
+    if len(var_cols) == 1:
+        vcol = var_cols[0]
+        plt.figure()
+        plt.plot(df[vcol], df["ΔE (eV)"], marker='o')
+        plt.xlabel(vcol)
+        plt.ylabel("ΔE (eV)")
+        plt.title(f"Energy Scan vs {vcol}")
+        plt.grid(True)
+        out_plot = os.path.join(scan_dir, f"{scan_name}_plot.png")
+        plt.savefig(out_plot, dpi=300)
+        plt.close()
+        print(f"📈 1D Plot saved to {out_plot}")
+
+    # === Optional heatmap if 2D ===
+    if len(var_cols) == 2:
+        xvar, yvar = var_cols
+        pivot = df.pivot(index=yvar, columns=xvar, values="ΔE (eV)")
+        plt.figure(figsize=(6, 5))
+        c = plt.pcolor(pivot.columns, pivot.index, pivot.values, shading='auto', cmap='viridis')
+        plt.colorbar(c, label="ΔE (eV)")
+        plt.xlabel(xvar)
+        plt.ylabel(yvar)
+        plt.title("Heatmap of ΔE (eV)")
+        plt.tight_layout()
+        heatmap_file = os.path.join(scan_dir, f"{scan_name}_heatmap.png")
+        plt.savefig(heatmap_file, dpi=300)
+        plt.close()
+        print(f"📊 Heatmap saved to {heatmap_file}")
+
+    # === Skipped logs ===
+    if skipped:
+        print(f"\n⚠️ Skipped {len(skipped)} file(s):")
+        for log, reason in skipped:
+            print(f" - {log}: {reason}")
+
 
 

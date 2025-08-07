@@ -338,11 +338,25 @@ def main():
             from .analyze import compare_log_energies
             return compare_log_energies()
 
-
         if cmd in ("handle", "10"):
             sys.argv.pop(1)
             from gausskit.error_fixer import batch_fix_and_report
             return batch_fix_and_report() 
+
+        if cmd in ("rename", "11"):
+            sys.argv.pop(1)
+            from gausskit.utils import rename_logs_from_inputs
+            return rename_logs_from_inputs()
+    
+        if cmd in ("scan", "12"):
+            sys.argv.pop(1)
+            from gausskit.generator import generate_zmatrix_scan_inputs
+            return generate_zmatrix_scan_inputs()
+    
+        if cmd in ("plotscan", "13"):
+            sys.argv.pop(1)
+            from .analyze import analyze_zmatrix_scan_logs
+            analyze_zmatrix_scan_logs()
 
 
         # Meta flags
@@ -369,29 +383,80 @@ def main():
         print("GaussKit version 0.1.0")
         return
 
+
+    import math
+    from prompt_toolkit import prompt
+    
     print("=" * 70)
     print("Welcome to GaussKit: Gaussian Input Automation Toolkit")
     print("Author: Ali Abou Taka")
     print("Type `gausskit --about` for full details.")
     print("=" * 70)
+    
+    # Define menu choices
+    choice_labels = [
+        "[0] Exit",
+        "[1] PIMOM Swap",
+        "[2] Input Generator",
+        "[3] Franck–Condon Input Generator",
+        "[4] Job Scheduler",
+        "[5] Benchmark Input Generator",
+        "[6] Log Analyzer CLI",
+        "[7] Vibronic Summary Tool",
+        "[8] Extract XYZ From Log files",
+        "[9] Energy Comparison for Benchmark Logs",
+        "[10] Error Handler",
+        "[11] Rename log files",
+        "[12] Scan Generator (Z-Matrix)",
+        "[13] Analyze and plot Scan outputs"
+    ]
+    
+    # Determine number of rows for even layout (e.g., 10 per column)
+    rows = math.ceil(len(choice_labels) / 2)
+    
+    # Pad with empty strings to make equal-length columns
+    while len(choice_labels) < 2 * rows:
+        choice_labels.append("")
+    
+    # Split into two columns
+    col1 = choice_labels[:rows]
+    col2 = choice_labels[rows:]
+    
+    # Print two cleanly aligned columns
+    print("Choose mode:\n")
+    for left, right in zip(col1, col2):
+        print(f"{left:<45}{right}")
+    
+    # Final prompt
+    max_choice = len([c for c in choice_labels if c]) - 1
+    choice = prompt(f"\nEnter your choice [0–{max_choice}]: ").strip()
+    
 
-    choice = prompt(
-        "Choose mode:\n"
-        "[0] Exit\n"
-        "[1] PIMOM Swap\n"
-        "[2] Input Generator\n"
-        "[3] Franck–Condon Input Generator\n"
-        "[4] Job Scheduler\n"
-        "[5] Benchmark Input Generator\n"
-        "[6] Log Analyzer CLI\n"
-        "[7] Vibronic Summary Tool\n"
-        "[8] Extract XYZ From Log files\n"
-        "[9] Energy Comparison for Benchmark Logs\n"
-        "[10] Error Handler\n"
-        "[11] Rename log files\n"
-        "[12] Scan Generator (Z-Matrix)\n"
-        "Enter your choice [0–12]: "
-    ).strip()
+
+#    print("=" * 70)
+#    print("Welcome to GaussKit: Gaussian Input Automation Toolkit")
+#    print("Author: Ali Abou Taka")
+#    print("Type `gausskit --about` for full details.")
+#    print("=" * 70)
+#
+#    choice = prompt(
+#        "Choose mode:\n"
+#        "[0] Exit\n"
+#        "[1] PIMOM Swap\n"
+#        "[2] Input Generator\n"
+#        "[3] Franck–Condon Input Generator\n"
+#        "[4] Job Scheduler\n"
+#        "[5] Benchmark Input Generator\n"
+#        "[6] Log Analyzer CLI\n"
+#        "[7] Vibronic Summary Tool\n"
+#        "[8] Extract XYZ From Log files\n"
+#        "[9] Energy Comparison for Benchmark Logs\n"
+#        "[10] Error Handler\n"
+#        "[11] Rename log files\n"
+#        "[12] Scan Generator (Z-Matrix)\n"
+#        "[13] Analyze and plot Scan outputs\n"
+#        "Enter your choice [0–13]: "
+#    ).strip()
 
     if choice == "0":
         print("Exiting GaussKit.")
@@ -428,6 +493,9 @@ def main():
         from .generator import generate_zmatrix_scan_inputs
         generate_zmatrix_scan_inputs()
 
+    elif choice == "13":
+        from .analyze import analyze_zmatrix_scan_logs
+        analyze_zmatrix_scan_logs()
 
 
 

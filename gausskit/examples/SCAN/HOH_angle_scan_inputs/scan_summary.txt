@@ -1,0 +1,19 @@
+Generated scan files:
+
+HOH_angle_step01.com: A1=100.000000
+HOH_angle_step02.com: A1=105.000000
+HOH_angle_step03.com: A1=110.000000
+HOH_angle_step04.com: A1=115.000000
+HOH_angle_step05.com: A1=120.000000
+HOH_angle_step06.com: A1=125.000000
+HOH_angle_step07.com: A1=130.000000
+HOH_angle_step08.com: A1=135.000000
+HOH_angle_step09.com: A1=140.000000
+
+Scan setup metadata:
+Route: #P B3LYP genecp scf=novaracc
+Charge: 0, Multiplicity: 1
+Scan Mode: 1
+Scanned Variables:
+  A1: start=100.0, end=140.0, step=5.0, steps=9
+Basis set reference: @SDDPlusTZ.gbs
