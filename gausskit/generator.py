@@ -646,14 +646,29 @@ def generate_zmatrix_scan_inputs():
     # ===1.1. Prepare output folder ===
     scan_dir = f"{scan_name}_scan_inputs"
     if os.path.exists(scan_dir):
-        rename = prompt(f"⚠️ Folder '{scan_dir}' already exists. Rename? (y/n) [y]: ").strip().lower()
-        if rename in ['', 'y', 'yes']:
+        print(f"⚠️ Folder '{scan_dir}' already exists.")
+        choice = prompt("Do you want to [o]verwrite, [r]ename, or [c]ancel? [o/r/c]: ").strip().lower()
+    
+        if choice in ['', 'o', 'overwrite']:
+            # Overwrite: clear the existing folder
+            import shutil
+            try:
+                shutil.rmtree(scan_dir)
+                print(f"🧹 Removed existing folder '{scan_dir}'.")
+            except Exception as e:
+                print(f"❌ Failed to remove folder: {e}")
+                return
+    
+        elif choice in ['r', 'rename']:
             new_name = prompt("Enter new scan name: ").strip() or f"{scan_name}_v2"
             scan_dir = f"{new_name}_scan_inputs"
+    
         else:
             print("❌ Aborted.")
             return
+    
     os.makedirs(scan_dir)
+    
     
     summary_lines = []
     step_records = []
@@ -838,15 +853,18 @@ def generate_zmatrix_scan_inputs():
         chk_name = f"{name}.chk"
         out_file = os.path.join(scan_dir, f"{name}.com")
         with open(out_file, 'w') as f:
-            f.write(
-                f"%chk={chk_name}\n{route}\n\n{name}\n\n"
-                f"{charge} {mult}\n" +
-                "\n".join(geom_lines).strip() + "\n\n" +
-                "\n".join(new_var_lines) +
-                ("\n" + "\n".join(f"{v} F" for v in frozen_vars) if frozen_vars else "") +
-                "\n"+ basis_block + "\n"
-            )
-
+            f.write(f"%chk={chk_name}\n{route}\n\n{name}\n\n{charge} {mult}\n")
+            f.write("\n".join(geom_lines).strip() + "\n\n")
+            f.write("\n".join(new_var_lines))
+        
+            if frozen_vars:
+                f.write("\n" + "\n".join(f"{v} F" for v in frozen_vars))
+        
+            if basis_block:
+                f.write("\n" + basis_block.strip())
+        
+            f.write("\n")  # Final newline
+        
         summary_lines.append(f"{os.path.basename(out_file)}: " +
                              ", ".join(f"{k}={v:.6f}" for k, v in step_vars.items()))
 

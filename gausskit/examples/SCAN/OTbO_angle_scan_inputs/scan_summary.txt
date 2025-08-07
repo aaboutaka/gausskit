@@ -1,0 +1,19 @@
+Generated scan files:
+
+OTbO_angle_step01.com: A1=140.000000
+OTbO_angle_step02.com: A1=145.000000
+OTbO_angle_step03.com: A1=150.000000
+OTbO_angle_step04.com: A1=155.000000
+OTbO_angle_step05.com: A1=160.000000
+OTbO_angle_step06.com: A1=165.000000
+OTbO_angle_step07.com: A1=170.000000
+OTbO_angle_step08.com: A1=175.000000
+OTbO_angle_step09.com: A1=180.000000
+
+Scan setup metadata:
+Route: #P B3LYP Genecp scf=novaracc
+Charge: 0, Multiplicity: 15
+Scan Mode: 1
+Scanned Variables:
+  A1: start=140.0, end=180.0, step=5.0, steps=9
+Basis set reference: @SDDPlusTZ.gbs
