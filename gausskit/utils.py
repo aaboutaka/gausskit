@@ -2,15 +2,6 @@ import re
 from prompt_toolkit.completion import Completer, PathCompleter, Completion, FuzzyCompleter, WordCompleter
 import os
 
-import os
-import re
-
-import os
-import re
-
-import os
-import re
-
 def rename_logs_from_inputs():
     base_name = input("Enter base molecule name (e.g., N2): ").strip()
     include_mult = input("Include multiplicity in filename? (y/n) [y]: ").strip().lower() in ['', 'y', 'yes']
@@ -412,4 +403,40 @@ def safe_float_input(message, allow_empty=False, default=None):
             print("❌ Invalid input. Please enter a numeric value.")
             attempts += 1
 
+def add_modredundant_to_opt(route):
+    route = route.strip()
+
+    if "modredundant" in route.lower():
+        return route  # Already handled
+
+    # Match OPT only — not the full route
+    words = route.split()
+    new_words = []
+
+    i = 0
+    while i < len(words):
+        word = words[i]
+
+        if word.lower() == "opt":
+            # Case: just "opt"
+            new_words.append("opt=ModRedundant")
+            i += 1  # Skip the next word only if it’s not a real keyword
+        elif word.lower().startswith("opt="):
+            opt_value = word[4:]  # after opt=
+            if opt_value.startswith("(") and opt_value.endswith(")"):
+                inner = opt_value[1:-1].split(",")
+                if "modredundant" not in [v.lower() for v in inner]:
+                    inner.append("ModRedundant")
+                new_words.append("opt=(" + ",".join(inner) + ")")
+            else:
+                inner = opt_value.split(",")
+                if "modredundant" not in [v.lower() for v in inner]:
+                    inner.append("ModRedundant")
+                new_words.append("opt=(" + ",".join(inner) + ")")
+            i += 1
+        else:
+            new_words.append(word)
+            i += 1
+
+    return " ".join(new_words)
 

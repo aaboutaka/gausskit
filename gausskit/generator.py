@@ -5,7 +5,7 @@ from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.completion import WordCompleter, PathCompleter
 from gausskit.completions import tab_autocomplete_prompt, HybridCompleter
-from gausskit.utils import safe_float_input
+from gausskit.utils import safe_float_input, add_modredundant_to_opt
 
 def read_xyz_file(xyz_path):
     """Reads XYZ coordinates with flexible delimiters and optional atomic index column."""
@@ -645,7 +645,16 @@ def generate_zmatrix_scan_inputs():
 
     # ===1.1. Prepare output folder ===
     scan_dir = f"{scan_name}_scan_inputs"
-    os.makedirs(scan_dir, exist_ok=True)
+    if os.path.exists(scan_dir):
+        rename = prompt(f"⚠️ Folder '{scan_dir}' already exists. Rename? (y/n) [y]: ").strip().lower()
+        if rename in ['', 'y', 'yes']:
+            new_name = prompt("Enter new scan name: ").strip() or f"{scan_name}_v2"
+            scan_dir = f"{new_name}_scan_inputs"
+        else:
+            print("❌ Aborted.")
+            return
+    os.makedirs(scan_dir)
+    
     summary_lines = []
     step_records = []
 
@@ -654,6 +663,21 @@ def generate_zmatrix_scan_inputs():
     route = prompt("Enter Gaussian route section [# b3lyp/def2TZVP]: ").strip() or "# b3lyp/def2TZVP"
     if not route.startswith("#"):
         route = f"#{route}"
+
+    frozen_vars = []
+    if "opt" in route.lower():
+        freeze_input = prompt("OPT keyword detected. Enter variables to freeze (comma-separated), or press Enter to skip: ").strip()
+        if freeze_input:
+            frozen_vars = [v.strip() for v in freeze_input.split(',') if v.strip()]
+    
+            if "modredundant" or "modred" not in route.lower():
+                print("⚠️ Freezing variables requires 'ModRedundant' as part of Opt.")
+                add_modred = prompt("Automatically insert it into Opt section? (y/n) [y]: ").strip().lower()
+                if add_modred in ["", "y", "yes"]:
+                    route = add_modredundant_to_opt(route)
+                    print(f"✅ Updated route: {route}")
+            
+     
 
     
     # GEN/GENECP handling with @filename reference
@@ -818,7 +842,9 @@ def generate_zmatrix_scan_inputs():
                 f"%chk={chk_name}\n{route}\n\n{name}\n\n"
                 f"{charge} {mult}\n" +
                 "\n".join(geom_lines).strip() + "\n\n" +
-                "\n".join(new_var_lines) + basis_block + "\n\n"
+                "\n".join(new_var_lines) +
+                ("\n" + "\n".join(f"{v} F" for v in frozen_vars) if frozen_vars else "") +
+                "\n"+ basis_block + "\n"
             )
 
         summary_lines.append(f"{os.path.basename(out_file)}: " +
