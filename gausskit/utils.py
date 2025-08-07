@@ -379,3 +379,37 @@ def prompt_and_submit(com_file: str):
         gdv=gdv_key
     )
 
+def safe_float_input(message, allow_empty=False, default=None):
+    """
+    Prompt the user for a float. Handles invalid input with retry logic.
+
+    Parameters:
+    - message (str): The prompt message.
+    - allow_empty (bool): If True, return None on empty input.
+    - default (float or None): Default value to use on second empty entry.
+
+    Returns:
+    - float or None
+    """
+    attempts = 0
+    while True:
+        raw = prompt(message).strip()
+        if raw == "":
+            if allow_empty:
+                return None
+            elif attempts == 0 and default is None:
+                print("⚠️  Please enter a number or press Enter again to cancel.")
+                attempts += 1
+                continue
+            elif default is not None:
+                return default
+            else:
+                print("❌ Aborted.")
+                return None
+        try:
+            return float(raw)
+        except ValueError:
+            print("❌ Invalid input. Please enter a numeric value.")
+            attempts += 1
+
+
