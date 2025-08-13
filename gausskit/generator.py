@@ -211,7 +211,7 @@ def create_benchmark_inputs():
         PathCompleter(file_filter=lambda f: f.endswith(".xyz"))
     ])
 
-    functional_completer = WordCompleter(DFT_FUNCTIONALS = [
+    DFT_FUNCTIONALS = [
     # General Hybrid and GGA
     'HF', 'BLYP', 'PBE', 'PBE0', 'SCAN', 'TPSSh',
     'B3LYP', 'B3P86', 'B3PW91', 'O3LYP',
@@ -259,11 +259,9 @@ def create_benchmark_inputs():
     'VSXC', 'HCTH', 'HCTH93', 'HCTH147', 'HCTH407', 'tHCTH',
     'B97D', 'B97D3',
     'M06L', 'SOGGA11', 'M11L', 'MN12L', 'N12', 'MN15L'
-    ], ignore_case=True)
+    ]
 
-
-
-    basis_completer = WordCompleter([
+    BASIS_SETS = [
     # Minimal and Split-Valence
     'STO-3G', '3-21G', '6-21G', '4-31G',
     '6-31G', '6-31G(d)', '6-31+G(d,p)', '6-31G(d\')', '6-31G(d\',p\')',
@@ -298,7 +296,10 @@ def create_benchmark_inputs():
 
     # Generic/genecp
     'gen', 'genecp'
-    ], ignore_case=True)
+    ]
+
+    functional_completer = WordCompleter(DFT_FUNCTIONALS, ignore_case=True)
+    basis_completer = WordCompleter(BASIS_SETS,  ignore_case=True)
 
 
     functionals = prompt("Enter functional(s) (comma-separated): ", completer=functional_completer).strip().split(",")
