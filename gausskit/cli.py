@@ -166,43 +166,63 @@ def run_pimom_cli():
 
     # 9) Handle the different combinations
     # multiple α-swaps + multiple β-swaps
-    if len(alpha_pairs) > 1 or len(beta_pairs) > 1 and not (auto_alpha or auto_beta):
+
+    if (len(alpha_pairs) > 1 and len(beta_pairs) > 1) and not (auto_alpha or auto_beta):
         choice = prompt(
             "Detected multiple α-swaps and multiple β-swaps.\n"
             "  [1] Pair each α with each β (cross-product)\n"
             "  [2] Combine ALL α & β in one file\n"
             "  [3] One file per α (each α with ALL β)\n"
             "  [4] One file per β (each β with ALL α)\n"
+            "  [5] α-only separate + β-only separate (no mixing)\n"
             "[default: 1]: "
         ).strip() or "1"
-
+    
         if choice == "2":
-            combine = True
             # one file with all α's and all β's
             do_write(alpha_pairs, beta_pairs, charge, multiplicity)
-
+    
         elif choice == "1":
             # one file per (α,β) pair
             for a in alpha_pairs:
                 for b in beta_pairs:
                     do_write([a], [b], charge, multiplicity)
-
+    
         elif choice == "3":
             # one file per α, pairing that α with all β's
             for a in alpha_pairs:
                 do_write([a], beta_pairs, charge, multiplicity)
-
+    
         elif choice == "4":
             # one file per β, pairing that β with all α's
             for b in beta_pairs:
                 do_write(alpha_pairs, [b], charge, multiplicity)
-
+    
+        elif choice == "5":
+            # α-only separate AND β-only separate (no mixing)
+            # Ask if multiplicities should be the same for both sets of files
+            samem = prompt("Same multiplicity for α-only and β-only files? [y/N]: ").strip().lower() or "n"
+            if samem.startswith("y"):
+                m_alpha = multiplicity
+                m_beta  = multiplicity
+            else:
+                m_alpha = prompt(f"Multiplicity for α-only files [default={multiplicity}]: ").strip() or multiplicity
+                m_beta  = prompt(f"Multiplicity for β-only files [default={multiplicity}]: ").strip() or multiplicity
+    
+            # Write α-only (one file per α swap)
+            for a in alpha_pairs:
+                do_write([a], [], charge, m_alpha)
+    
+            # Write β-only (one file per β swap)
+            for b in beta_pairs:
+                do_write([], [b], charge, m_beta)
+     
         else:
-            # fallback to combine all
             print("Invalid choice — defaulting to combine all.")
             do_write(alpha_pairs, beta_pairs, charge, multiplicity)
-
+    
         return
+    
 
     # 9a) If both manual α & β and no auto/combine flags, ask how to split
     if alpha_pairs and beta_pairs and not (auto_alpha or auto_beta or combine):
@@ -358,6 +378,13 @@ def main():
             from .analyze import analyze_zmatrix_scan_logs
             analyze_zmatrix_scan_logs()
 
+        if cmd in ("distort", "modes", "14"):
+            sys.argv.pop(1)
+            from gausskit.distort import run_distort_cli
+            return run_distort_cli()
+
+
+
 
         # Meta flags
         if cmd in ("--about", "about"):
@@ -408,7 +435,9 @@ def main():
         "[10] Error Handler",
         "[11] Rename log files",
         "[12] Scan Generator (Z-Matrix)",
-        "[13] Analyze and plot Scan outputs"
+        "[13] Analyze and plot Scan outputs",
+        "[14] Geometry Distorter (Vib Modes)"
+
     ]
     
     # Determine number of rows for even layout (e.g., 10 per column)
@@ -428,7 +457,7 @@ def main():
         print(f"{left:<45}{right}")
     
     # Final prompt
-    max_choice = len([c for c in choice_labels if c]) - 1
+    max_choice = len([c for c in choice_labels if c]) - 1  
     choice = prompt(f"\nEnter your choice [0–{max_choice}]: ").strip()
     
 

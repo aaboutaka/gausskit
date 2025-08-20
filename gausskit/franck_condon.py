@@ -43,7 +43,8 @@ def generate_fc_input():
         f.write(f"#p {functional} ChkBasis FREQ(ReadFC,FC,ReadFCHT) Geom=Checkpoint NOSYMM guess=read\n\n")
         f.write(f"{title}\n\n")
         f.write(f"{charge} {multiplicity}\n\n")
-        f.write(f" Method={fc_method}, Spectrum=(Broadening=Stick,Lower=-10000.0,Upper=40000.0) temperature={temperature}\n\n")
+        f.write(f"Method={fc_method}\n")
+        f.write(f"Spectrum=(Broadening=Stick,Lower=-10000.0,Upper=40000.0) temperature={temperature}\n\n")
         f.write(f"{newchk}\n")
         if include_time_independent:
             f.write("TimeIndependent\n")

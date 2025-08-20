@@ -213,7 +213,7 @@ def create_benchmark_inputs():
 
     DFT_FUNCTIONALS = [
     # General Hybrid and GGA
-    'HF', 'BLYP', 'PBE', 'PBE0', 'SCAN', 'TPSSh',
+    'HF', 'BLYP', 'PBE', 'PBE0', 'TPSSh',
     'B3LYP', 'B3P86', 'B3PW91', 'O3LYP',
 
     # Dispersion-Corrected Functionals
@@ -303,7 +303,6 @@ def create_benchmark_inputs():
 
 
     functionals = prompt("Enter functional(s) (comma-separated): ", completer=functional_completer).strip().split(",")
-#    basis_sets = prompt("Enter basis set(s) (comma-separated): ", completer=basis_completer).strip()
     raw_basis_input = prompt("Enter basis set(s) (e.g. 6-31G, 6-31+G(d,p), def2-TZVP): ", completer=basis_completer).strip()
     basis_sets = smart_split_basis_sets(raw_basis_input)
     charge = prompt("Enter charge: (default = 0)").strip() or "0"
