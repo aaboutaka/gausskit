@@ -50,7 +50,7 @@ It helps you generate `.com` input files, perform orbital permutations for PIMOM
 * ✅ **Gaussian Error Handler (auto-fix & resubmit)**
   Scans `.log` files for known Gaussian errors (via a YAML database), applies structured route-line fixes (add/remove keywords), writes `.bak`, and can resubmit.
 
-* ✅ **(Optional) Rename Utility**
+* ✅ **(Optional) Rename Utility (Not fully updated)**
   Batch-rename Gaussian outputs to a consistent `Molecule_Functional_Basis.ext` convention (and keep `.chk`/batch files in sync).
 
 * ✅ **Z-Matrix Scan Generator**
@@ -62,6 +62,8 @@ It helps you generate `.com` input files, perform orbital permutations for PIMOM
 * ✅ **Default FC Input from GS/ES Pair**
   Auto-construct a Franck–Condon `.com` from your selected GS/ES `.com` files in the scheduler flow.
 
+* ✅ Geometry Distorter (Vib Modes)
+Create distorted geometries along Gaussian vibrational modes from a freq log. Interactive wizard or flags; route presets with TAB-completion; %OldChk path completion; auto %Chk=<out_prefix>_<tag>.chk; amplitude safety check; optional SLURM submit; multi-sampling per mode.
 ---
 
 
@@ -101,6 +103,8 @@ Choose mode:
 [4] Job Scheduler                            [11] Rename log files
 [5] Benchmark Input Generator                [12] Scan Generator (Z-Matrix)
 [6] Log Analyzer CLI                         [13] Analyze and plot Scan outputs
+                                             [14] Geometry Distorter (Vib Modes)
+
 ```
 
 ---
@@ -124,6 +128,8 @@ gausskit handle|10            # Mode 10: Error Handler
 gausskit rename|11            # Mode 11: Rename log files
 gausskit scan|12              # Mode 12: Scan Generator (Z-Matrix)
 gausskit plotscan|13          # Mode 13: Analyze and plot Scan outputs
+gausskit distort|modes|14     # Mode 14: Geometry Distorter (vibrational modes)
+
 ```
 
 **Examples:**
@@ -514,6 +520,86 @@ H2-ES.chk
 TimeIndependent
 Output=Matrix=JK
 ```
+
+---
+
+## 📘 Mode 14 – Geometry Distorter (Vib Modes)
+
+Generate distorted geometries by moving atoms along **Gaussian normal modes** parsed from a frequency log. Works via an **interactive wizard** (no flags) or a **flag-based** CLI for automation.
+
+**What it does**
+
+* Uses geometry from **log** (Standard/Input orientation, first/last) or an external **XYZ** (standard or headerless).
+* Parses `Frequencies --` blocks and per-atom `X Y Z` displacements.
+* Creates **± displacements** per selected mode or **K random-amplitude samples** per mode.
+* Can also make **random linear combinations** of modes.
+* Writes `.xyz` (always) and, if chosen, Gaussian `.com` files with `%OldChk` and `%Chk` just above the route line.
+
+**Wizard niceties**
+
+* One-line file picker: `freq.log, coords.xyz` with **TAB-completion for both** (comma-aware).
+* **Route presets** with TAB-completion (you can also type your own; `#p` is auto-added if missing).
+* **%OldChk** prompt with path autocompletion (`.chk/.fchk/.pch`).
+* **%Chk** filename is **automatic**: `%Chk=<out_prefix>_<tag>.chk`.
+* **Safety check:** warns if amplitude `amp > 0.3 Å` (you can override in flags path).
+* Optional **SLURM submit** after writing each `.com`.
+
+**File naming**
+
+* Mode displacements: `<prefix>_mNNNp` (plus) and `<prefix>_mNNNn` (minus).
+  `p`/`n` indicate the sign along the mode direction.
+* Per-mode random samples: `<prefix>_mNNN_rKKp` / `_rKKn` (or `_rKK` if plus-only).
+* Random combos: `<prefix>_randNN`.
+
+**Recommended amplitudes (`--amp`)**
+
+* Typical: **0.05–0.10 Å** (safe, physical)
+* Strong:  **0.15–0.20 Å**
+* ⚠️ Avoid > **0.30 Å** unless intentional (the wizard warns you)
+
+**Examples (wizard)**
+
+```bash
+gausskit distort
+# type:  freq.log, coords.xyz    (TAB-complete both)
+# pick modes: 1,3-5
+# set amp: 0.08
+# choose: generate multiple per mode? yes → how many? 5 → both signs? yes
+# write .com? yes → pick route from presets → select %OldChk via TAB → submit to SLURM? no
+```
+
+**Examples (flags)**
+
+```bash
+# List modes
+gausskit distort --log freq.log --list
+
+# Fixed ± at full amp for modes 1–3 (geometry from log)
+gausskit distort --log freq.log --geom-source log --modes 1 2 3 --amp 0.08 --out-prefix seed
+
+# K random-amplitude samples per mode (both signs), plus Gaussian inputs
+gausskit distort --log freq.log --modes 1 2 3 --amp 0.08 \
+  --samples-per-mode 5 \
+  --gaussian --route "#p wb97xd/def2-svp chkbasis guess=read nosymm" \
+  --oldchk GS.chk --out-prefix seed
+
+# Same but plus-only variants and with external XYZ
+gausskit distort --log freq.log --xyz coords.xyz --modes 4 7 --amp 0.06 \
+  --samples-per-mode 4 --samples-plus-only \
+  --gaussian --route "#p ub3lyp/6-31g(d) opt" --out-prefix test
+
+# Random linear combinations (no specific modes)
+gausskit distort --log freq.log --random 8 --amp 0.06 --out-prefix rand
+```
+
+**Flags you can use**
+
+* `--log FILE` (required) • `--xyz FILE` • `--geom-source {auto,log,xyz}` • `--orientation {standard,input}` • `--geom-which {last,first}`
+* `--list` • `--modes 1 2 3` • `--amp 0.08` • `--random N` • `--seed INT`
+* `--gaussian` • `--route "…" ` • `--title "…" ` • `--charge INT` • `--mult INT` • `--oldchk FILE`
+* **Sampling per mode:** `--samples-per-mode K` (K>1 ⇒ random magnitude in (0, amp]), `--samples-plus-only`
+* **Safety override:** `--allow-large-amp` (bypass >0.3 Å guard in flags path)
+* **Submission:** `--submit` (prompt to submit each `.com` to SLURM)
 
 ---
 
