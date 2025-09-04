@@ -6,34 +6,43 @@ from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.completion import WordCompleter, PathCompleter
 from gausskit.completions import tab_autocomplete_prompt, HybridCompleter
 from gausskit.utils import safe_float_input, add_modredundant_to_opt
+from gausskit.utils import parse_int_csv, clean_token
 
 def read_xyz_file(xyz_path):
-    """Reads XYZ coordinates with flexible delimiters and optional atomic index column."""
+    """Read an XYZ file, handling both standard (N+comment) and headerless formats.
+    Returns: list of lines like 'C  0.00000000  0.00000000  0.00000000'
+    """
     try:
-        coords = []
         with open(xyz_path, 'r') as f:
-            for line in f:
-                # Remove whitespace and skip blank lines
-                if not line.strip():
-                    continue
+            raw = [ln.strip() for ln in f if ln.strip()]
 
-                # Split by any whitespace, comma, or tab
-                parts = re.split(r'[,\s]+', line.strip())
+        if not raw:
+            return []
 
-                # Handle formats: [atom, x, y, z] or [atom, _, x, y, z]
-                if len(parts) == 4:
-                    atom, x, y, z = parts
-                elif len(parts) == 5 and parts[1].isdigit():
-                    atom, _, x, y, z = parts
-                else:
-                    print(f"⚠️ Skipping unrecognized line: {line.strip()}")
-                    continue
+        coords = []
+        # Case 1: Standard XYZ with atom count on first line
+        try:
+            n_atoms = int(raw[0])
+            records = raw[2:2+n_atoms]   # skip atom count + comment
+        except ValueError:
+            # Case 2: Headerless: take all lines
+            records = raw
 
-                coords.append(f"{atom} {x} {y} {z}")
+        for line in records:
+            parts = re.split(r'[,\s]+', line.strip())
+            if len(parts) < 4:
+                continue
+            atom = parts[0]
+            try:
+                x, y, z = map(float, parts[-3:])
+            except ValueError:
+                continue
+            coords.append(f"{atom:2s} {x: .8f} {y: .8f} {z: .8f}")
+
         return coords
 
     except Exception as e:
-        print(f"❌ Failed to read XYZ file: {e}")
+        print(f"❌ Failed to read XYZ file {xyz_path}: {e}")
         return []
 
 
@@ -205,117 +214,179 @@ def create_benchmark_inputs():
     print("Benchmark Input Generator: XYZ → .com for each functional/basis set")
     print("=" * 60)
 
-    xyz_files = [f for f in os.listdir() if f.endswith(".xyz")]
-    file_completer = HybridCompleter([
-        WordCompleter(xyz_files),
-        PathCompleter(file_filter=lambda f: f.endswith(".xyz"))
-    ])
+    # Discover available XYZs in cwd
+    xyz_files = [f for f in os.listdir() if f.lower().endswith(".xyz")]
+    if not xyz_files:
+        print("⚠️  No .xyz files found in the current directory.")
+    else:
+        print(f"Found {len(xyz_files)} .xyz file(s).")
 
+    # --- Preset lists ---------------------------------------------------------
     DFT_FUNCTIONALS = [
-    # General Hybrid and GGA
-    'HF', 'BLYP', 'PBE', 'PBE0', 'TPSSh',
-    'B3LYP', 'B3P86', 'B3PW91', 'O3LYP',
-
-    # Dispersion-Corrected Functionals
-    'APFD', 'APF', 'wB97XD',
-
-    # Long-Range-Corrected Functionals
-    'LC-wHPBE', 'LC-wPBE', 'CAM-B3LYP', 'wB97X', 'wB97',
-
-    # Truhlar Group Functionals
-    'MN15', 'M11', 'SOGGA11X', 'N12SX', 'MN12SX',
-    'PW6B95', 'PW6B95D3', 'M08HX',
-    'M06', 'M06HF', 'M062X', 'M05', 'M052X',
-
-    # PBE Correlation-Based Hybrids
-    'PBE1PBE', 'HSEH1PBE', 'OHSE2PBE', 'OHSE1PBE', 'PBEh1PBE',
-
-    # One-Parameter Hybrids
-    'B1B95', 'B1LYP', 'mPW1PW91', 'mPW1LYP', 'mPW1PBE', 'mPW3PBE',
-
-    # B97 Revisions
-    'B98', 'B971', 'B972',
-
-    # τ-dependent hybrids
-    'tHCTHhyb', 'BMK',
-
-    # Older/Legacy Hybrids
-    'X3LYP', 'HISSbPBE',
-
-    # Half-and-Half Hybrids
-    'BHandH', 'BHandHLYP',
-
-    # Exchange-only Functionals
-    'PW91', 'mPW', 'G96', 'O', 'TPSS', 'RevTPSS', 'BRx', 'PKZB', 'wPBEh', 'PBEh',
-
-    # Correlation-only Functionals
-    'VWN', 'VWN5', 'LYP', 'PL', 'P86', 'PW91', 'B95',
-    'TPSS', 'RevTPSS', 'KCIS', 'BRC', 'PKZB',
-
-    # Combined correlation variations
-    'VP86', 'V5LYP',
-
-    # Standalone Pure Functionals
-    'VSXC', 'HCTH', 'HCTH93', 'HCTH147', 'HCTH407', 'tHCTH',
-    'B97D', 'B97D3',
-    'M06L', 'SOGGA11', 'M11L', 'MN12L', 'N12', 'MN15L'
+        # General Hybrid and GGA
+        'HF', 'BLYP', 'PBE', 'PBE0', 'TPSSh',
+        'B3LYP', 'B3P86', 'B3PW91', 'O3LYP',
+        # Dispersion-Corrected
+        'APFD', 'APF', 'wB97XD',
+        # Long-Range-Corrected
+        'LC-wHPBE', 'LC-wPBE', 'CAM-B3LYP', 'wB97X', 'wB97',
+        # Truhlar Group
+        'MN15', 'M11', 'SOGGA11X', 'N12SX', 'MN12SX',
+        'PW6B95', 'PW6B95D3', 'M08HX',
+        'M06', 'M06HF', 'M062X', 'M05', 'M052X',
+        # PBE Correlation-Based Hybrids
+        'PBE1PBE', 'HSEH1PBE', 'OHSE2PBE', 'OHSE1PBE', 'PBEh1PBE',
+        # One-Parameter Hybrids
+        'B1B95', 'B1LYP', 'mPW1PW91', 'mPW1LYP', 'mPW1PBE', 'mPW3PBE',
+        # B97 Revisions
+        'B98', 'B971', 'B972',
+        # τ-dependent hybrids
+        'tHCTHhyb', 'BMK',
+        # Older/Legacy Hybrids
+        'X3LYP', 'HISSbPBE',
+        # Half-and-Half Hybrids
+        'BHandH', 'BHandHLYP',
+        # Exchange-only Functionals
+        'PW91', 'mPW', 'G96', 'O', 'TPSS', 'RevTPSS', 'BRx', 'PKZB', 'wPBEh', 'PBEh',
+        # Correlation-only Functionals
+        'VWN', 'VWN5', 'LYP', 'PL', 'P86', 'PW91', 'B95',
+        'TPSS', 'RevTPSS', 'KCIS', 'BRC', 'PKZB',
+        # Combined correlation variations
+        'VP86', 'V5LYP',
+        # Standalone Pure Functionals
+        'VSXC', 'HCTH', 'HCTH93', 'HCTH147', 'HCTH407', 'tHCTH',
+        'B97D', 'B97D3',
+        'M06L', 'SOGGA11', 'M11L', 'MN12L', 'N12', 'MN15L'
     ]
 
     BASIS_SETS = [
-    # Minimal and Split-Valence
-    'STO-3G', '3-21G', '6-21G', '4-31G',
-    '6-31G', '6-31G(d)', '6-31+G(d,p)', '6-31G(d\')', '6-31G(d\',p\')',
-    '6-311G', '6-311+G(d)', '6-311+G(d,p)', '6-311++G(d,p)',
-
-    # Dunning correlation-consistent
-    'cc-pVDZ', 'cc-pVTZ', 'cc-pVQZ', 'cc-pV5Z', 'cc-pV6Z',
-    'aug-cc-pVDZ', 'aug-cc-pVTZ', 'aug-cc-pVQZ', 'aug-cc-pV5Z', 'aug-cc-pV6Z',
-    'daug-cc-pVDZ', 'daug-cc-pVTZ', 'spaug-cc-pVDZ', 'jul-cc-pVDZ',
-    'Jun-cc-pVDZ', 'May-cc-pVDZ', 'Apr-cc-pVDZ',
-
-    # Ahlrichs/Weigend def2 sets
-    'def2-SVP', 'def2-SVPP', 'def2-TZVP', 'def2-TZVPP',
-    'def2-QZVP', 'def2-QZVPP',
-
-    # ECP & pseudopotentials
-    'LanL2MB', 'LanL2DZ', 'SDD', 'SDDAll',
-    'CEP-4G', 'CEP-31G', 'CEP-121G',
-    'SHC', 'SEC',
-
-    # D95 and variations
-    'D95', 'D95V',
-
-    # Other built-ins and specialty
-    'SV', 'SVP', 'TZV', 'TZVP', 'QZVP',
-    'MidiX', 'MTSmall', 'CBSB7',
-    'EPR-II', 'EPR-III',
-    'DGDZVP', 'DGDZVP2', 'DGTZVP',
-    'UGBS', 'UGBS1P', 'UGBS2P', 'UGBS3P',
-    'UGBS1V', 'UGBS2V', 'UGBS3V',
-    'UGBS1O', 'UGBS2O', 'UGBS3O',
-
-    # Generic/genecp
-    'gen', 'genecp'
+        # Minimal and Split-Valence
+        'STO-3G', '3-21G', '6-21G', '4-31G',
+        '6-31G', '6-31G(d)', '6-31+G(d,p)', "6-31G(d')", "6-31G(d',p')",
+        '6-311G', '6-311+G(d)', '6-311+G(d,p)', '6-311++G(d,p)',
+        # Dunning correlation-consistent
+        'cc-pVDZ', 'cc-pVTZ', 'cc-pVQZ', 'cc-pV5Z', 'cc-pV6Z',
+        'aug-cc-pVDZ', 'aug-cc-pVTZ', 'aug-cc-pVQZ', 'aug-cc-pV5Z', 'aug-cc-pV6Z',
+        'daug-cc-pVDZ', 'daug-cc-pVTZ', 'spaug-cc-pVDZ', 'jul-cc-pVDZ',
+        'Jun-cc-pVDZ', 'May-cc-pVDZ', 'Apr-cc-pVDZ',
+        # Ahlrichs/Weigend def2 sets
+        'def2-SVP', 'def2-SVPP', 'def2-TZVP', 'def2-TZVPP',
+        'def2-QZVP', 'def2-QZVPP',
+        # ECP & pseudopotentials
+        'LanL2MB', 'LanL2DZ', 'SDD', 'SDDAll',
+        'CEP-4G', 'CEP-31G', 'CEP-121G',
+        'SHC', 'SEC',
+        # D95 and variations
+        'D95', 'D95V',
+        # Other built-ins and specialty
+        'SV', 'SVP', 'TZV', 'TZVP', 'QZVP',
+        'MidiX', 'MTSmall', 'CBSB7',
+        'EPR-II', 'EPR-III',
+        'DGDZVP', 'DGDZVP2', 'DGTZVP',
+        'UGBS', 'UGBS1P', 'UGBS2P', 'UGBS3P',
+        'UGBS1V', 'UGBS2V', 'UGBS3V',
+        'UGBS1O', 'UGBS2O', 'UGBS3O',
+        # Generic/genecp
+        'gen', 'genecp'
     ]
 
     functional_completer = WordCompleter(DFT_FUNCTIONALS, ignore_case=True)
-    basis_completer = WordCompleter(BASIS_SETS,  ignore_case=True)
+    basis_completer      = WordCompleter(BASIS_SETS,      ignore_case=True)
 
+    # --- Inputs ---------------------------------------------------------------
+    raw_funcs = prompt("Enter functional(s) (comma-separated): ",
+                       completer=functional_completer).strip()
+    functionals = [f.strip() for f in raw_funcs.split(",") if f.strip()]
 
-    functionals = prompt("Enter functional(s) (comma-separated): ", completer=functional_completer).strip().split(",")
-    raw_basis_input = prompt("Enter basis set(s) (e.g. 6-31G, 6-31+G(d,p), def2-TZVP): ", completer=basis_completer).strip()
+    raw_basis_input = prompt(
+        "Enter basis set(s) (e.g. 6-31G, 6-31+G(d,p), def2-TZVP): ",
+        completer=basis_completer
+    ).strip()
     basis_sets = smart_split_basis_sets(raw_basis_input)
-    charge = prompt("Enter charge: (default = 0)").strip() or "0"
-    multiplicity = prompt("Enter multiplicity: (default = 1) ").strip() or "1"
+    basis_sets = [b.strip() for b in basis_sets if b.strip()]
+
+    # --- Charge/Multiplicity modes -------------------------------------------
+    pairs = []
+    mode = prompt(
+        "Charge/Multiplicity mode:\n"
+        "  [1] Single charge + single multiplicity\n"
+        "  [2] Multiple charges (same or different multiplicities)\n"
+        "  [3] Explicit pairs (e.g., 0/1, -1/2, 1/2)\n"
+        "  [4] Single charge + multiple multiplicities\n"
+        "[default: 1]: "
+    ).strip() or "1"
+
+    if mode == "3":
+        raw = prompt("Enter charge/multiplicity pairs (e.g., 0/1, -1/2, 1/2): ").strip()
+        for tok in raw.split(","):
+            tok = tok.strip()
+            if not tok:
+                continue
+            try:
+                q_s, m_s = tok.split("/", 1)
+                q = int(q_s.strip()); m = int(m_s.strip())
+                pairs.append((q, m))
+            except Exception:
+                print(f"[warn] Skipping invalid pair: {tok!r}")
+        if not pairs:
+            print("[warn] No valid pairs entered; defaulting to 0/1.")
+            pairs = [(0, 1)]
+
+    elif mode == "2":
+        charges = parse_int_csv(prompt("Enter charges (comma-separated, e.g., 0, -1, 1): ").strip())
+        if not charges:
+            print("[warn] No charges entered; defaulting to 0.")
+            charges = [0]
+        same_mult = (prompt("Same multiplicity for all charges? [Y/n]: ").strip().lower() or "y").startswith("y")
+        if same_mult:
+            m = int(prompt("Multiplicity [default=1]: ").strip() or "1")
+            pairs = [(q, m) for q in charges]
+        else:
+            mults = parse_int_csv(prompt(
+                "Enter multiplicities (comma-separated; same length as charges), "
+                "or press ENTER to set per charge: "
+            ).strip())
+            if mults and len(mults) == len(charges):
+                pairs = list(zip(charges, mults))
+            else:
+                for q in charges:
+                    m = int(prompt(f"Multiplicity for charge {q} [default=1]: ").strip() or "1")
+                    pairs.append((q, m))
+
+    elif mode == "4":
+        # NEW: Single charge + multiple multiplicities
+        q = int(prompt("Charge [default=0]: ").strip() or "0")
+        mults = parse_int_csv(prompt("Enter multiplicities (comma-separated, e.g., 1, 3, 5): ").strip())
+        if not mults:
+            print("[warn] No multiplicities entered; defaulting to 1.")
+            mults = [1]
+        pairs = [(q, m) for m in mults]
+        # Optional: filename style for this mode
+        fname_style = (prompt(
+            "Filename style for single charge + multiple multiplicities?\n"
+            "  [1] Standard: <mol>_<func>_<basis>_q<q>_m<m>.com  (default)\n"
+            "  [2] Condensed: <mol>_<m>_<func>_<basis>.com  (omit charge)\n"
+            "[default: 1]: "
+        ).strip() or "1")
+    else:
+        q = int(prompt("Charge [default=0]: ").strip() or "0")
+        m = int(prompt("Multiplicity [default=1]: ").strip() or "1")
+        pairs = [(q, m)]
+
+
+    # --- Keywords -------------------------------------------------------------
     keywords = prompt("Enter route keywords (default: Opt Freq SCF=(fermi, novaracc) int=superfinegrid): ").strip()
     if not keywords:
         keywords = "Opt Freq SCF=(fermi, novaracc) int=superfinegrid"
 
-    basis_sets = [b.strip() for b in basis_sets if b.strip()]
+    # --- Custom basis footer (for gen/genecp) --------------------------------
     needs_custom_basis = any(b.lower() in ("gen", "genecp") for b in basis_sets)
     custom_basis_content = ""
     if needs_custom_basis:
-        basis_file = tab_autocomplete_prompt("Enter custom basis set file (e.g., .gbs, .txt): ", completer=PathCompleter()).strip()
+        basis_file = tab_autocomplete_prompt(
+            "Enter custom basis set file (e.g., .gbs, .txt): ",
+            completer=PathCompleter()
+        ).strip()
         if not os.path.exists(basis_file):
             print(f"❌ File {basis_file} not found.")
             choice = prompt("Do you want to continue and reference it as @basisset? (y/n): ").strip().lower()
@@ -327,67 +398,84 @@ def create_benchmark_inputs():
                 custom_basis_content = f"@{basis_file}\n"
         else:
             custom_basis_content = f"@{basis_file}\n"
-    
 
+    # --- Generate for every XYZ in cwd ---------------------------------------
     for xyz in xyz_files:
-        coords = read_xyz_file(xyz)
-        coords_str = "\n".join(coords)
-        molname = xyz.replace(".xyz", "")
+        coords = read_xyz_file(xyz)  # Expect list like ["C 0.0 0.0 0.0", ...]
+        # print(coords)
+        # Reformat to fixed-point to avoid scientific notation
+        fixed_lines = []
+        for ln in coords:
+            parts = ln.split()
+            if len(parts) >= 4:
+                el = parts[0]
+                try:
+                    x = float(parts[1]); y = float(parts[2]); z = float(parts[3])
+                    fixed_lines.append(f"{el:2s} {x: .8f} {y: .8f} {z: .8f}")
+                except Exception:
+                    # Fallback: keep original if parsing fails
+                    fixed_lines.append(ln.strip())
+            else:
+                fixed_lines.append(ln.strip())
+        coords_str = "\n".join(fixed_lines)
+
+        molname = xyz[:-4]
 
         for func in functionals:
+            func_token = func.strip()
+            func_core  = func_token.split("/", 1)[0]   # keep method only if user typed "B3LYP/..."
+            func_clean = clean_token(func_core)
+
             for basis in basis_sets:
-                func_clean = clean_label(func)
-                basis_clean = clean_label(basis)
-                filename = f"{molname}_{func_clean}_{basis_clean}.com"
-                chkname = filename.replace(".com", ".chk")
-                stab_chkname = chkname.replace(".chk", "-stab.chk")
-        
-                method_basis = f"{func.strip()}/{basis.strip()}"
-                stability_route = f"#P {method_basis} Geom=AllCheck Guess=Read Stable=Opt SCF=(fermi,novaracc)"
-                stability_route_2 = f"#P  {func.strip()} chkbasis  Geom=AllCheck Guess=Read Stable=Opt SCF=(fermi,novaracc)"                
-                optfreq_route = f"#P {func.strip()} chkbasis Geom=AllCheck Guess=Read {keywords}"
-        
-                # Link 0: Initial Stability
-                com_content = f"""%Chk={chkname}
-#P {method_basis} SCF=(fermi,novaracc) Guess=Mix Stable=Opt
+                basis_token = basis.strip()
+                basis_clean = clean_token(basis_token)
 
-Initial Stability Check for {molname}
+                basis_lower     = basis_token.lower()
+                basis_in_route  = basis_lower if basis_lower in ("gen", "genecp") else basis_token
 
-{charge} {multiplicity}
-{coords_str}
-"""
-        
-                if basis.lower() in ("gen", "genecp"):
-                    com_content += f"\n{custom_basis_content.strip()}\n\n"
-                else:
-                    com_content += "\n"
-        
-                # Link 1: Optimization + Frequency
-                com_content += f"""--Link1--
-%Chk={chkname}
-{optfreq_route}
+                # Build route line; sanitize keywords to avoid '# #p' duplication
+                kw = (keywords or "").strip()
+                if kw.startswith("#"):
+                    kw = kw.lstrip("#").lstrip("pP").lstrip()
+                route_line = f"#p {func_core}/{basis_in_route} {kw}".rstrip()
 
-Optimization and Frequency
+                for (q, m) in pairs:
+                    base_name = f"{molname}_{func_clean}_{basis_clean}_q{q}_m{m}"
+                    out_name  = f"{base_name}.com"
+                    chk_name  = f"{base_name}.chk"
 
-"""
-        
-                # Link 2: Final Stability Check
-                com_content += f"""--Link1--
-%OldChk={chkname}
-%Chk={stab_chkname}
-{stability_route_2}
+                    title = f"{molname} — {func_core}/{basis_token}   q={q} m={m}"
 
-Final Stability Check
+                    # Build the 3 route lines
+                    route_stab1   = f"#p {func_core}/{basis_in_route} stable=opt scf=novaracc guess=mix int=superfinegrid".rstrip()
+                    route_optfreq = f"#p {func_core} guess=read chkbasis geom=allcheck {keywords}".rstrip()
+                    route_stab2   = f"#p {func_core} stable=opt guess=read chkbasis geom=allcheck int=superfinegrid".rstrip()
+                    
+                    with open(out_name, "w", encoding="utf-8") as f:
+                        # ----- Stage 1: Stability (with geometry & optional custom basis) -----
+                        f.write(f"%chk={chk_name}\n")
+                        f.write(route_stab1 + "\n\n")
+                        f.write(f"{molname} — {func_core}/{basis_token}   q={q} m={m}   [1/3: Stability]\n\n")
+                        f.write(f"{q} {m}\n")
+                        f.write(coords_str.rstrip() + "\n\n")
+                        if basis_in_route in ("gen", "genecp") and custom_basis_content:
+                            # Only needed in stage 1; subsequent stages use ChkBasis
+                            f.write(custom_basis_content.rstrip() + "\n")
+                    
+                        # ----- Stage 2: Opt+Freq (read geom/basis/guess from chk) -----
+                        f.write("--Link1--\n")
+                        f.write(f"%chk={chk_name}\n")
+                        f.write(route_optfreq + "\n\n")
+                        f.write(f"{molname} — {func_core}/{basis_token}   q={q} m={m}   [2/3: Opt+Freq]\n\n")
+                    
+                        # ----- Stage 3: Stability again (final check) -----
+                        f.write("--Link1--\n")
+                        f.write(f"%chk={chk_name}\n")
+                        f.write(route_stab2 + "\n\n")
+                        f.write(f"{molname} — {func_core}/{basis_token}   q={q} m={m}   [3/3: Stability]\n\n")
 
 
-
-"""
-        
-                with open(filename, "w") as f:
-                    f.write(com_content)
-        
-                print(f"✅ Generated: {filename}")
-         
+                    print(f"✔ Wrote {out_name}")
 
 
 def create_default_fc_input(gs_base: str, es_base: str) -> str:
@@ -546,8 +634,10 @@ def extract_xyz_from_log(logfile_path, orientation="standard"):
             symbol = periodic_table[atomic_number]
         else:
             symbol = "X"
-        x, y, z = tokens[3:6]
-        xyz_lines.append(f"{symbol} {x} {y} {z}")
+
+        x = float(tokens[3]); y = float(tokens[4]); z = float(tokens[5])
+        xyz_lines.append(f"{symbol:2s} {x: .8f} {y: .8f} {z: .8f}")
+
     return xyz_lines
 
 
@@ -719,9 +809,59 @@ def generate_zmatrix_scan_inputs():
     
     
     
-    charge = prompt("Enter molecular charge [0]: ").strip() or "0"
-    mult = prompt("Enter multiplicity [1]: ").strip() or "1"
-
+   # charge = prompt("Enter molecular charge [0]: ").strip() or "0"
+   # mult = prompt("Enter multiplicity [1]: ").strip() or "1"
+    pairs = []  # list[(charge, multiplicity)]
+    
+    mode = prompt(
+        "Charge/Multiplicity mode:\n"
+        "  [1] Single charge + single multiplicity\n"
+        "  [2] Multiple charges (same or different multiplicities)\n"
+        "  [3] Explicit pairs (e.g., 0/1, -1/2, 1/2)\n"
+        "[default: 1]: "
+    ).strip() or "1"
+    
+    if mode == "3":
+        raw = prompt("Enter charge/multiplicity pairs (e.g., 0/1, -1/2, 1/2): ").strip()
+        for tok in raw.split(","):
+            tok = tok.strip()
+            if not tok:
+                continue
+            try:
+                q_s, m_s = tok.split("/", 1)
+                q = int(q_s.strip()); m = int(m_s.strip())
+                pairs.append((q, m))
+            except Exception:
+                print(f"[warn] Skipping invalid pair: {tok!r}")
+        if not pairs:
+            print("[warn] No valid pairs entered; defaulting to 0/1.")
+            pairs = [(0, 1)]
+    
+    elif mode == "2":
+        charges = _parse_int_csv(prompt("Enter charges (comma-separated, e.g., 0, -1, 1): ").strip())
+        if not charges:
+            print("[warn] No charges entered; defaulting to 0.")
+            charges = [0]
+        same_mult = (prompt("Same multiplicity for all charges? [Y/n]: ").strip().lower() or "y").startswith("y")
+        if same_mult:
+            m = int(prompt("Multiplicity [default=1]: ").strip() or "1")
+            pairs = [(q, m) for q in charges]
+        else:
+            # try a vector input first
+            mults = _parse_int_csv(prompt("Enter multiplicities (comma-separated, same length as charges), or press ENTER to set per charge: ").strip())
+            if mults and len(mults) == len(charges):
+                pairs = list(zip(charges, mults))
+            else:
+                # ask per charge
+                for q in charges:
+                    m = int(prompt(f"Multiplicity for charge {q} [default=1]: ").strip() or "1")
+                    pairs.append((q, m))
+    
+    else:
+        q = int(prompt("Charge [default=0]: ").strip() or "0")
+        m = int(prompt("Multiplicity [default=1]: ").strip() or "1")
+        pairs = [(q, m)]
+    
     # === 2. Scan variable definitions ===
     labels = {}  # e.g. 'B1': {'start': 1.9, 'end': 2.1, 'step': 0.05, 'steps': 5, 'values': [...]}
 

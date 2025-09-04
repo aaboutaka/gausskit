@@ -16,4 +16,6 @@ Generate `.com` files for combinations of functionals and basis sets using small
 3. Provide the desired combinations of functionals and basis sets.
 
 
-
+NOTES:
+Files H2O_CAM-B3LYP_6-31+Gdp_q0_m1.com, and :H2O_CAM-B3LYP_genecp_q0_m1.com have been
+modified to include scf=qc to over come "Convergence failure"

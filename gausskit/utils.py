@@ -462,3 +462,16 @@ def extract_scan_variables_from_com(comfile):
     return var_values
 
 
+def parse_int_csv(s: str):
+    s = (s or "").strip()
+    if not s:
+        return []
+    return [int(tok) for tok in re.split(r"[,\s]+", s) if tok]
+
+# ---- helper: sanitize tokens for filenames ----
+def clean_token(s: str) -> str:
+    s = s.replace("/", "_").replace("\\", "_")
+    return re.sub(r"[^A-Za-z0-9+_.-]+", "", s)
+
+
+

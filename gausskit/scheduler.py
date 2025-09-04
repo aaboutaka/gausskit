@@ -716,7 +716,7 @@ def run_job_scheduler():
         else:
             fc = prompt(" FC .com: ", completer=WordCompleter(coms)).strip().removesuffix(".com")
     # Background?
-    ans = prompt("Run scheduler in background? (y/n) [default: n]: ").strip().lower() or "n"
+    ans = prompt("Run scheduler in background? (y/n) [default: y]: ").strip().lower() or "y"
     bg = ans.startswith("y")
     if bg and not daemonize():
         print("🚀 Scheduler is now running in background (see gausskit-scheduler.log).")

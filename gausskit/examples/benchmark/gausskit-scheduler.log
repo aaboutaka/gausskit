@@ -1,0 +1,26 @@
+✅ Submitted H2O_B3LYP_6-31+Gdp_q0_m1.com → Job ID 1590299 (partition=cenvalarc.bigmem)
+✅ Submitted H2O_B3LYP_genecp_q0_m1.com → Job ID 1590300 (partition=cenvalarc.bigmem)
+⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
+✅ Submitted H2O_CAM-B3LYP_STO-3G_q0_m1.com → Job ID 1590301 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
+✅ Submitted H2O_CAM-B3LYP_6-31+Gdp_q0_m1.com → Job ID 1590302 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
+✅ Submitted H2O_CAM-B3LYP_genecp_q0_m1.com → Job ID 1590303 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
+✅ Submitted H2_HF_STO-3G_q0_m1.com → Job ID 1590304 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
+✅ Submitted H2_HF_6-31+Gdp_q0_m1.com → Job ID 1590305 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
+✅ Submitted H2_B3LYP_STO-3G_q0_m1.com → Job ID 1590306 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
+✅ Submitted H2_B3LYP_6-31+Gdp_q0_m1.com → Job ID 1590307 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
+✅ Submitted H2_B3LYP_genecp_q0_m1.com → Job ID 1590308 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
+✅ Submitted H2_CAM-B3LYP_STO-3G_q0_m1.com → Job ID 1590309 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
+✅ Submitted H2_CAM-B3LYP_6-31+Gdp_q0_m1.com → Job ID 1590310 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
+✅ Submitted H2_CAM-B3LYP_genecp_q0_m1.com → Job ID 1590311 (partition=short)
+⏳ Waiting for 13 batch jobs …
+❌ ERROR termination detected in H2O_CAM-B3LYP_6-31+Gdp_q0_m1.log

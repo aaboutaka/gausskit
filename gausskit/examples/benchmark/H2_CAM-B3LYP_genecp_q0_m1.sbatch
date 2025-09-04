@@ -1,0 +1,26 @@
+#!/bin/bash
+#SBATCH --mail-user=aaboutaka@ucmerced.edu
+#SBATCH --mail-type=ALL
+#SBATCH -J H2_CAM-B3LYP_genecp_q0_m1
+#SBATCH -o H2_CAM-B3LYP_genecp_q0_m1.com.qlog
+#SBATCH -p short
+#SBATCH --time=05:59:00
+#SBATCH --mem=115200
+#SBATCH --nodes=1
+#SBATCH --ntasks=56
+
+# Load Gaussian module
+module load gaussian/gdv-20250101-j30+
+
+# Scratch directory setup
+export My_Scratch=/scratch/$USER/$SLURM_JOBID
+export GAUSS_SCRDIR=$My_Scratch
+mkdir -p $My_Scratch
+
+# Run Gaussian
+gdv -m=92GB -p=56 < H2_CAM-B3LYP_genecp_q0_m1.com >& H2_CAM-B3LYP_genecp_q0_m1.log
+
+# Clean up
+rm -rf $My_Scratch
+
+# Created at 2025-09-03 17:08:12

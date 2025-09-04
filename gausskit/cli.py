@@ -526,7 +526,9 @@ def main():
         from .analyze import analyze_zmatrix_scan_logs
         analyze_zmatrix_scan_logs()
 
-
+    elif choice == "14":
+        from gausskit.distort import run_distort_cli
+        run_distort_cli()
 
     
     else:
