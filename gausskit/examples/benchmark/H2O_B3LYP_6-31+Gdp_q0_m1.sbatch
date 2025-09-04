@@ -3,8 +3,8 @@
 #SBATCH --mail-type=ALL
 #SBATCH -J H2O_B3LYP_6-31+Gdp_q0_m1
 #SBATCH -o H2O_B3LYP_6-31+Gdp_q0_m1.com.qlog
-#SBATCH -p cenvalarc.bigmem
-#SBATCH --time=23:50:00
+#SBATCH -p short
+#SBATCH --time=05:59:00
 #SBATCH --mem=115200
 #SBATCH --nodes=1
 #SBATCH --ntasks=56
@@ -23,4 +23,4 @@ gdv -m=92GB -p=56 < H2O_B3LYP_6-31+Gdp_q0_m1.com >& H2O_B3LYP_6-31+Gdp_q0_m1.log
 # Clean up
 rm -rf $My_Scratch
 
-# Created at 2025-09-03 17:08:09
+# Created at 2025-09-03 18:03:11

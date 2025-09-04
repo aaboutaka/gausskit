@@ -7,7 +7,7 @@
 #SBATCH --time=05:59:00
 #SBATCH --mem=115200
 #SBATCH --nodes=1
-#SBATCH --ntasks=14
+#SBATCH --ntasks=56
 
 # Load Gaussian module
 module load gaussian/gdv-20250101-j30+
@@ -18,9 +18,9 @@ export GAUSS_SCRDIR=$My_Scratch
 mkdir -p $My_Scratch
 
 # Run Gaussian
-gdv -m=92GB -p=14 < H2O_HF_STO-3G_q0_m1.com >& H2O_HF_STO-3G_q0_m1.log
+gdv -m=92GB -p=56 < H2O_HF_STO-3G_q0_m1.com >& H2O_HF_STO-3G_q0_m1.log
 
 # Clean up
 rm -rf $My_Scratch
 
-# Created at 2025-09-03 17:00:38
+# Created at 2025-09-03 18:03:13

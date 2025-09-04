@@ -1,26 +1,50 @@
-✅ Submitted H2O_B3LYP_6-31+Gdp_q0_m1.com → Job ID 1590299 (partition=cenvalarc.bigmem)
-✅ Submitted H2O_B3LYP_genecp_q0_m1.com → Job ID 1590300 (partition=cenvalarc.bigmem)
-⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
-✅ Submitted H2O_CAM-B3LYP_STO-3G_q0_m1.com → Job ID 1590301 (partition=short)
-⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
-✅ Submitted H2O_CAM-B3LYP_6-31+Gdp_q0_m1.com → Job ID 1590302 (partition=short)
-⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
-✅ Submitted H2O_CAM-B3LYP_genecp_q0_m1.com → Job ID 1590303 (partition=short)
-⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
-✅ Submitted H2_HF_STO-3G_q0_m1.com → Job ID 1590304 (partition=short)
-⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
-✅ Submitted H2_HF_6-31+Gdp_q0_m1.com → Job ID 1590305 (partition=short)
-⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
-✅ Submitted H2_B3LYP_STO-3G_q0_m1.com → Job ID 1590306 (partition=short)
-⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
-✅ Submitted H2_B3LYP_6-31+Gdp_q0_m1.com → Job ID 1590307 (partition=short)
-⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
-✅ Submitted H2_B3LYP_genecp_q0_m1.com → Job ID 1590308 (partition=short)
-⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
-✅ Submitted H2_CAM-B3LYP_STO-3G_q0_m1.com → Job ID 1590309 (partition=short)
-⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
-✅ Submitted H2_CAM-B3LYP_6-31+Gdp_q0_m1.com → Job ID 1590310 (partition=short)
-⚠️ Primary 'cenvalarc.bigmem' full (2/2), skipping.
-✅ Submitted H2_CAM-B3LYP_genecp_q0_m1.com → Job ID 1590311 (partition=short)
-⏳ Waiting for 13 batch jobs …
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+✅ Submitted H2O_B3LYP_6-31+Gdp_q0_m1.com → Job ID 1590340 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+✅ Submitted H2O_B3LYP_STO-3G_q0_m1.com → Job ID 1590341 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+✅ Submitted H2O_B3LYP_genecp_q0_m1.com → Job ID 1590342 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+✅ Submitted H2O_CAM-B3LYP_6-31+Gdp_q0_m1.com → Job ID 1590343 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+✅ Submitted H2O_CAM-B3LYP_STO-3G_q0_m1.com → Job ID 1590344 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+✅ Submitted H2O_CAM-B3LYP_genecp_q0_m1.com → Job ID 1590345 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+✅ Submitted H2O_HF_6-31+Gdp_q0_m1.com → Job ID 1590346 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+✅ Submitted H2O_HF_STO-3G_q0_m1.com → Job ID 1590347 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+✅ Submitted H2O_HF_genecp_q0_m1.com → Job ID 1590348 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+✅ Submitted H2_B3LYP_6-31+Gdp_q0_m1.com → Job ID 1590349 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+✅ Submitted H2_B3LYP_STO-3G_q0_m1.com → Job ID 1590350 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+✅ Submitted H2_B3LYP_genecp_q0_m1.com → Job ID 1590351 (partition=short)
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+❌ Submission error in stderr on 'short':
+sbatch: error: QOSMaxSubmitJobPerUserLimit
+sbatch: error: Batch job submission failed: Job violates accounting/QOS policy (job submit limit, user's size and/or time limits)
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+❌ Submission error in stderr on 'short':
+sbatch: error: QOSMaxSubmitJobPerUserLimit
+sbatch: error: Batch job submission failed: Job violates accounting/QOS policy (job submit limit, user's size and/or time limits)
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+❌ Submission error in stderr on 'short':
+sbatch: error: QOSMaxSubmitJobPerUserLimit
+sbatch: error: Batch job submission failed: Job violates accounting/QOS policy (job submit limit, user's size and/or time limits)
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+❌ Submission error in stderr on 'short':
+sbatch: error: QOSMaxSubmitJobPerUserLimit
+sbatch: error: Batch job submission failed: Job violates accounting/QOS policy (job submit limit, user's size and/or time limits)
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+❌ Submission error in stderr on 'short':
+sbatch: error: QOSMaxSubmitJobPerUserLimit
+sbatch: error: Batch job submission failed: Job violates accounting/QOS policy (job submit limit, user's size and/or time limits)
+⚠️ Primary 'cenvalarc.bigmem' full (1/1), skipping.
+❌ Submission error in stderr on 'short':
+sbatch: error: QOSMaxSubmitJobPerUserLimit
+sbatch: error: Batch job submission failed: Job violates accounting/QOS policy (job submit limit, user's size and/or time limits)
+⏳ Waiting for 18 batch jobs …
 ❌ ERROR termination detected in H2O_CAM-B3LYP_6-31+Gdp_q0_m1.log

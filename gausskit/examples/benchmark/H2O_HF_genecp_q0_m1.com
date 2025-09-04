@@ -1,5 +1,5 @@
-%chk=H2O_HF_genecp_q0_m1.chk
-#p HF/genecp stable=opt scf=novaracc guess=mix
+%chk=H2O_HF_genecp_q0_m1_stab.chk
+#p HF/genecp stable=opt scf=novaracc guess=mix int=superfinegrid
 
 H2O — HF/genecp   q=0 m=1   [1/3: Stability]
 
@@ -10,14 +10,16 @@ H  -0.75860200  0.00000000  0.50428400
 
 @SDDPlusTZ.gbs
 --Link1--
+%oldchk=H2O_HF_genecp_q0_m1_stab.chk
 %chk=H2O_HF_genecp_q0_m1.chk
-#p HF guess=read chkbasis geom=allcheck Opt Freq SCF=(fermi, novaracc) int=superfinegrid
+#p HF guess=read chkbasis geom=allcheck Opt Freq int=superfinegrid scf=xqc
 
 H2O — HF/genecp   q=0 m=1   [2/3: Opt+Freq]
 
 --Link1--
-%chk=H2O_HF_genecp_q0_m1.chk
-#p HF stable=opt guess=read chkbasis geom=allcheck
+%oldchk=H2O_HF_genecp_q0_m1.chk
+%chk=H2O_HF_genecp_q0_m1_stab.chk
+#p HF stable=opt guess=read chkbasis geom=allcheck int=superfinegrid
 
 H2O — HF/genecp   q=0 m=1   [3/3: Stability]
 

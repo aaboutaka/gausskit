@@ -23,4 +23,4 @@ gdv -m=92GB -p=56 < H2O_CAM-B3LYP_STO-3G_q0_m1.com >& H2O_CAM-B3LYP_STO-3G_q0_m1
 # Clean up
 rm -rf $My_Scratch
 
-# Created at 2025-09-03 17:08:09
+# Created at 2025-09-03 18:03:12

@@ -23,4 +23,4 @@ gdv -m=92GB -p=56 < H2_CAM-B3LYP_genecp_q0_m1.com >& H2_CAM-B3LYP_genecp_q0_m1.l
 # Clean up
 rm -rf $My_Scratch
 
-# Created at 2025-09-03 17:08:12
+# Created at 2025-09-03 18:03:15
