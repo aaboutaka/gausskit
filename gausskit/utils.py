@@ -2,6 +2,34 @@ import re
 from prompt_toolkit.completion import Completer, PathCompleter, Completion, FuzzyCompleter, WordCompleter
 import os
 
+
+from prompt_toolkit.completion import Completer, Completion, PathCompleter
+
+class MultiPathCompleter(Completer):
+    """
+    Like PathCompleter, but will complete *after* commas.
+    Splits input on commas and only asks PathCompleter to complete
+    the last token.
+    """
+    def __init__(self, **kwargs):
+        self._inner = PathCompleter(**kwargs)
+
+    def get_completions(self, document, complete_event):
+        text = document.text_before_cursor
+
+        if ',' in text:
+            prefix, last = text.rsplit(',', 1)
+            stripped = last.lstrip()
+            replace_len = len(last)
+
+            fake_doc = document.__class__(stripped, cursor_position=len(stripped))
+            for c in self._inner.get_completions(fake_doc, complete_event):
+                yield Completion(c.text, start_position=-replace_len)
+        else:
+            yield from self._inner.get_completions(document, complete_event)
+
+
+
 def rename_logs_from_inputs():
     base_name = input("Enter base molecule name (e.g., N2): ").strip()
     include_mult = input("Include multiplicity in filename? (y/n) [y]: ").strip().lower() in ['', 'y', 'yes']
