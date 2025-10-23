@@ -483,28 +483,31 @@ def create_benchmark_inputs():
     custom_basis_map = {}
     
     if needs_custom_basis:
+        expanded_basis_sets = []
         for basis in basis_sets:
             bl = basis.lower()
             if bl not in ("gen", "genecp"):
+                expanded_basis_sets.append(basis)
                 continue
     
-            # Prompt user for one or more files for this basis type
             msg = f"Enter basis set file(s) for '{basis}' (comma-separated if multiple): "
             raw_files = prompt(msg, completer=PathCompleter()).strip()
             files = [f.strip() for f in raw_files.split(",") if f.strip()]
             if not files:
-                print(f"[warn] No file provided for {basis}, skipping custom basis attachment.")
+                print(f"[warn] No files given for {basis}, skipping.")
                 continue
     
-            # Validate each file or prepare placeholder
-            file_entries = []
-            for file in files:
+            for i, file in enumerate(files, 1):
+                tag = f"{basis}{i}"  # e.g. gen1, gen2, genecp1, genecp2
+                expanded_basis_sets.append(tag)
                 if os.path.exists(file):
-                    file_entries.append(f"@{file}")
+                    custom_basis_map[tag.lower()] = f"@{file}\n"
                 else:
                     print(f"⚠️ File {file} not found. Referencing as @{file}. You must supply it later.")
-                    file_entries.append(f"@{file}")
-            custom_basis_map[bl] = "\n".join(file_entries) + "\n"
+                    custom_basis_map[tag.lower()] = f"@{file}\n"
+    
+        basis_sets = expanded_basis_sets
+
 
     # --- Generate for every XYZ in cwd ---------------------------------------
     for xyz in xyz_files:
@@ -565,8 +568,8 @@ def create_benchmark_inputs():
                         f.write(f"{molname} — {func_core}/{basis_token}   q={q} m={m}   [1/3: Stability]\n\n")
                         f.write(f"{q} {m}\n")
                         f.write(coords_str.rstrip() + "\n\n")
-                        if basis_in_route in ("gen", "genecp") and basis_in_route in custom_basis_map:
-                            f.write(custom_basis_map[basis_in_route].rstrip() + "\n")
+                        if basis_clean.lower() in custom_basis_map:
+                            f.write(custom_basis_map[basis_clean.lower()].rstrip() + "\n")
                                             
                         # ----- Stage 2: Opt+Freq (read geom/basis/guess from chk) -----
                         f.write("--Link1--\n")
