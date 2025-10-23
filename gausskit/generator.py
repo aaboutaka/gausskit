@@ -480,23 +480,31 @@ def create_benchmark_inputs():
 
     # --- Custom basis footer (for gen/genecp) --------------------------------
     needs_custom_basis = any(b.lower() in ("gen", "genecp") for b in basis_sets)
-    custom_basis_content = ""
+    custom_basis_map = {}
+    
     if needs_custom_basis:
-        basis_file = tab_autocomplete_prompt(
-            "Enter custom basis set file (e.g., .gbs, .txt): ",
-            completer=PathCompleter()
-        ).strip()
-        if not os.path.exists(basis_file):
-            print(f"❌ File {basis_file} not found.")
-            choice = prompt("Do you want to continue and reference it as @basisset? (y/n): ").strip().lower()
-            if not choice.startswith('y'):
-                print("⛔ Exiting.")
-                return
-            else:
-                print("⚠️ File will be referenced as @basisset. You must provide the file later.")
-                custom_basis_content = f"@{basis_file}\n"
-        else:
-            custom_basis_content = f"@{basis_file}\n"
+        for basis in basis_sets:
+            bl = basis.lower()
+            if bl not in ("gen", "genecp"):
+                continue
+    
+            # Prompt user for one or more files for this basis type
+            msg = f"Enter basis set file(s) for '{basis}' (comma-separated if multiple): "
+            raw_files = prompt(msg, completer=PathCompleter()).strip()
+            files = [f.strip() for f in raw_files.split(",") if f.strip()]
+            if not files:
+                print(f"[warn] No file provided for {basis}, skipping custom basis attachment.")
+                continue
+    
+            # Validate each file or prepare placeholder
+            file_entries = []
+            for file in files:
+                if os.path.exists(file):
+                    file_entries.append(f"@{file}")
+                else:
+                    print(f"⚠️ File {file} not found. Referencing as @{file}. You must supply it later.")
+                    file_entries.append(f"@{file}")
+            custom_basis_map[bl] = "\n".join(file_entries) + "\n"
 
     # --- Generate for every XYZ in cwd ---------------------------------------
     for xyz in xyz_files:
@@ -557,10 +565,9 @@ def create_benchmark_inputs():
                         f.write(f"{molname} — {func_core}/{basis_token}   q={q} m={m}   [1/3: Stability]\n\n")
                         f.write(f"{q} {m}\n")
                         f.write(coords_str.rstrip() + "\n\n")
-                        if basis_in_route in ("gen", "genecp") and custom_basis_content:
-                            # Only needed in stage 1; subsequent stages use ChkBasis
-                            f.write(custom_basis_content.rstrip() + "\n")
-                    
+                        if basis_in_route in ("gen", "genecp") and basis_in_route in custom_basis_map:
+                            f.write(custom_basis_map[basis_in_route].rstrip() + "\n")
+                                            
                         # ----- Stage 2: Opt+Freq (read geom/basis/guess from chk) -----
                         f.write("--Link1--\n")
                         f.write(f"%oldchk={chk_name_stab}\n")
