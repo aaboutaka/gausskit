@@ -2,11 +2,10 @@ import os
 import re
 import shutil
 from prompt_toolkit import prompt
-from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.completion import WordCompleter, PathCompleter
 from gausskit.completions import tab_autocomplete_prompt, HybridCompleter
 from gausskit.utils import safe_float_input, add_modredundant_to_opt
-from gausskit.utils import parse_int_csv, clean_token
+from gausskit.utils import parse_int_csv, clean_token, MultiPathCompleter
 
 def read_xyz_file(xyz_path):
     """Read an XYZ file, handling both standard (N+comment) and headerless formats.
@@ -142,7 +141,7 @@ def create_gaussian_input():
     oldchk = ""
     if add_old:
         oldchk = prompt("Select %OldChk file (TAB to browse): ",
-                        completer=PathCompleter(expanduser=True)).strip()
+                        completer=MultiFilePathCompleter()).strip()
         if not oldchk or not os.path.exists(oldchk):
             print(f"❌ OldChk file '{oldchk}' not found.")
             cont = (prompt("Continue without %OldChk? [Y/n]: ").strip().lower() or "y").startswith("y")
@@ -151,7 +150,7 @@ def create_gaussian_input():
                 oldchk = ""
             else:
                 oldchk = prompt("Select %OldChk file (TAB to browse): ",
-                                completer=PathCompleter(expanduser=True)).strip()
+                                completer=MultiFilePathCompleter()).strip()
                 if not oldchk or not os.path.exists(oldchk):
                     print(f"❌ OldChk file '{oldchk}' not found. Aborting.")
                     return
@@ -177,7 +176,7 @@ def create_gaussian_input():
     if need_basis_footer:
         basis_path = prompt(
             "GEN/GENECP detected. Enter basis file (e.g., SDD.gbs): ",
-            completer=PathCompleter(expanduser=True)
+            completer=MultiFilePathCompleter())
         ).strip()
 
         if not basis_path or not os.path.exists(basis_path):
