@@ -176,8 +176,7 @@ def create_gaussian_input():
     if need_basis_footer:
         basis_path = prompt(
             "GEN/GENECP detected. Enter basis file (e.g., SDD.gbs): ",
-            completer=MultiFilePathCompleter())
-        ).strip()
+            completer=MultiFilePathCompleter()).strip()
 
         if not basis_path or not os.path.exists(basis_path):
             print(f"❌ Basis set file '{basis_path}' not found.")
