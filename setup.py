@@ -8,7 +8,10 @@ setup(
     packages=find_packages(),
     install_requires=[
         'prompt_toolkit>=3.0.0',
-        'pyyaml>=6.0'
+        'pyyaml>=6.0',
+        'pandas>=2.0.0',
+        'numpy>=1.25.0',
+        'matplotlib>=3.8.0'
     ],
     entry_points={
         'console_scripts': [
