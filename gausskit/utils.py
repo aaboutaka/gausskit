@@ -1,11 +1,5 @@
-import re
-from prompt_toolkit.completion import Completer, PathCompleter, Completion, FuzzyCompleter, WordCompleter
-import os
-
-
-from prompt_toolkit.completion import Completer, Completion, PathCompleter
-
-from prompt_toolkit.completion import Completer, Completion, PathCompleter
+import re, os, datetime, subprocess
+from prompt_toolkit.completion import prompt, Completer, PathCompleter, Completion, FuzzyCompleter, WordCompleter
 
 class MultiPathCompleter(Completer):
     """
@@ -365,8 +359,6 @@ rm -rf $My_Scratch
     print(f"✅ Resubmitted via SLURM: {filename}.com → {filename}.sbatch")
 
 
-import os, datetime, subprocess
-from prompt_toolkit import prompt
 
 GDV_MODULES = {
     "g09":    "gaussian/g09-d01",
