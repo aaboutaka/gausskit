@@ -6,6 +6,7 @@ from prompt_toolkit.completion import WordCompleter, PathCompleter
 from gausskit.completions import tab_autocomplete_prompt, HybridCompleter
 from gausskit.utils import safe_float_input, add_modredundant_to_opt
 from gausskit.utils import parse_int_csv, clean_token, MultiPathCompleter
+import itertools
 
 def read_xyz_file(xyz_path):
     """Read an XYZ file, handling both standard (N+comment) and headerless formats.
@@ -818,16 +819,6 @@ def extract_xyz_cli():
                 f.write(line + "\n")
 
         print(f"✅ Extracted XYZ written to: {outname}")
-
-import os
-from prompt_toolkit import prompt
-from .utils import MultiPathCompleter  # For tab-completion of file paths
-
-
-import os
-import itertools
-from prompt_toolkit import prompt
-from .utils import MultiPathCompleter
 
 def generate_zmatrix_scan_inputs():
     """
