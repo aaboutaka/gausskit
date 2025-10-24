@@ -11,19 +11,24 @@ class MultiPathCompleter(Completer):
     def get_completions(self, document, complete_event):
         text = document.text_before_cursor
         if ',' in text:
+            # Split on comma to get everything after the last comma
             prefix, last = text.rsplit(',', 1)
+            # Strip leading whitespace from the fragment
             frag = last.lstrip()
             
-            # Create a fake document with just the fragment after the comma
-            fake = document.__class__(frag, cursor_position=len(frag))
+            # Create a fake document with just the fragment
+            fake_doc = document.__class__(frag, cursor_position=len(frag))
             
-            # Calculate the actual start position in the original document
-            # This is how far back from the cursor the fragment begins
-            start_pos = -len(last)  # Use the untrimmed 'last' length
+            # Calculate how many characters back from cursor to start replacing
+            # This should be the length of the trimmed fragment that we're completing
+            start_pos = -len(frag)
             
-            for c in self._inner.get_completions(fake, complete_event):
-                # Adjust the completion's start_position to account for the comma and spaces
-                yield Completion(c.text, start_position=start_pos + c.start_position)
+            for c in self._inner.get_completions(fake_doc, complete_event):
+                # The completion's start_position is relative to the fake document
+                # We need to adjust it to be relative to the real cursor position
+                # c.start_position tells us how far back in 'frag' to replace
+                actual_start = start_pos + c.start_position
+                yield Completion(c.text, start_position=actual_start)
         else:
             yield from self._inner.get_completions(document, complete_event)
 
