@@ -6,36 +6,40 @@ from prompt_toolkit.document import Document
 
 class MultiPathCompleter(Completer):
     """
-    Simple completer for comma-separated paths that inserts full filenames on TAB.
+    Path completer that supports comma-separated file lists.
+    Shows standard dropdown menu and only completes the last fragment.
     """
-    
-    def __init__(self):
-        self.path_completer = PathCompleter(expanduser=True)
-    
+    def __init__(self, **kwargs):
+        self.inner = PathCompleter(expanduser=True, **kwargs)
+
     def get_completions(self, document, complete_event):
-        text = document.text_before_cursor
-        
-        # Determine what we're currently completing
-        if ',' in text:
-            parts = text.split(',')
-            current = parts[-1].lstrip()
-        else:
-            current = text
-        
-        # Create a document with just the current part
-        temp_doc = Document(current, len(current))
-        
-        # Get completions
-        for c in self.path_completer.get_completions(temp_doc, complete_event):
-            # KEY CHANGE: Force replacement of the entire 'current' string
-            # This makes TAB insert the full filename instead of partial completion
+        buf = document.text_before_cursor
+        cur = document.cursor_position
+
+        # Find last comma before the cursor
+        last_comma = buf.rfind(',', 0, cur)
+        if last_comma == -1:
+            # No comma → normal path completion
+            yield from self.inner.get_completions(document, complete_event)
+            return
+
+        # Start position of the fragment after the comma
+        start = last_comma + 1
+        while start < cur and buf[start].isspace():
+            start += 1
+
+        fragment = buf[start:cur]
+        start_position = start - cur  # negative number
+
+        # Create a sub-document for just that fragment
+        fake_doc = Document(text=fragment, cursor_position=len(fragment))
+        for c in self.inner.get_completions(fake_doc, complete_event):
             yield Completion(
-                text=c.text,
-                start_position=-len(current) if current else 0,
+                c.text,
+                start_position=start_position,
                 display=c.display,
                 display_meta=c.display_meta
             )
-
 
 
 
