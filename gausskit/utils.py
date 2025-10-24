@@ -1,6 +1,6 @@
 import re, os, datetime, subprocess
 from prompt_toolkit.completion import Completer, PathCompleter, Completion, FuzzyCompleter, WordCompleter
-from prompt_toolkit from prompt_toolkit
+from prompt_toolkit import prompt
 class MultiPathCompleter(Completer):
     """
     Path completer that supports comma-separated multiple paths.
