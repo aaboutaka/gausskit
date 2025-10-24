@@ -5,26 +5,36 @@ from prompt_toolkit import prompt
 
 class MultiPathCompleter(Completer):
     """
-    Enable tab completion for comma-separated paths.
-    Each comma-delimited segment is completed independently.
+    Like PathCompleter, but will complete *after* commas.
+    Splits the input on commas and only asks PathCompleter to complete
+    the last token, then replaces that token when you hit TAB.
     """
     def __init__(self, **kwargs):
-        self._inner = PathCompleter(expanduser=True, **kwargs)
+        # delegate everything to a normal PathCompleter
+        self._inner = PathCompleter(**kwargs)
 
     def get_completions(self, document, complete_event):
         text = document.text_before_cursor
 
         if ',' in text:
-            # isolate the last segment after the final comma
-            _, last = text.rsplit(',', 1)
-            fragment = last.lstrip()
-            start_position = -len(fragment)
+            # split off everything up to the last comma
+            prefix, last = text.rsplit(',', 1)
+            stripped = last.lstrip()
+            replace_len = len(last)
 
-            fake_doc = document.__class__(fragment, cursor_position=len(fragment))
-            for c in self._inner.get_completions(fake_doc, complete_event):
-                # only replace the fragment, not the whole line
-                yield Completion(c.text, start_position=start_position)
+            # make a fake document for just that last segment
+            class _Doc:
+                def __init__(self, txt):
+                    self.text_before_cursor = txt
+
+            fake = _Doc(stripped)
+            for c in self._inner.get_completions(fake, complete_event):
+                yield Completion(
+                    c.text,
+                    start_position=-replace_len
+                )
         else:
+            # no commas yet — act just like PathCompleter
             yield from self._inner.get_completions(document, complete_event)
 
 
