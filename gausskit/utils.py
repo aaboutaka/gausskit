@@ -5,27 +5,36 @@ from prompt_toolkit import prompt
 from prompt_toolkit.document import Document
 
 class MultiPathCompleter(Completer):
+    """
+    Simple completer for comma-separated paths that inserts full filenames on TAB.
+    """
+    
     def __init__(self):
         self.path_completer = PathCompleter(expanduser=True)
     
     def get_completions(self, document, complete_event):
         text = document.text_before_cursor
         
-        # If no comma, just use regular path completion
-        if ',' not in text:
-            yield from self.path_completer.get_completions(document, complete_event)
-            return
+        # Determine what we're currently completing
+        if ',' in text:
+            parts = text.split(',')
+            current = parts[-1].lstrip()
+        else:
+            current = text
         
-        # Get the part after the last comma
-        after_comma = text.split(',')[-1]
-        current_part = after_comma.lstrip()
+        # Create a document with just the current part
+        temp_doc = Document(current, len(current))
         
-        # Create a temp document with just the current part
-        temp_doc = Document(current_part, len(current_part))
-        
-        # Get completions - PathCompleter's start_position already works!
-        for completion in self.path_completer.get_completions(temp_doc, complete_event):
-            yield completion
+        # Get completions
+        for c in self.path_completer.get_completions(temp_doc, complete_event):
+            # KEY CHANGE: Force replacement of the entire 'current' string
+            # This makes TAB insert the full filename instead of partial completion
+            yield Completion(
+                text=c.text,
+                start_position=-len(current) if current else 0,
+                display=c.display,
+                display_meta=c.display_meta
+            )
 
 
 
