@@ -490,7 +490,7 @@ def create_benchmark_inputs():
                 continue
     
             msg = f"Enter basis set file(s) for '{basis}' (comma-separated if multiple): "
-            raw_files = prompt(msg, completer=PathCompleter()).strip()
+            raw_files = prompt(msg, completer=MultiPathCompleter()).strip()
             files = [f.strip() for f in raw_files.split(",") if f.strip()]
             if not files:
                 print(f"[warn] No files given for {basis}, skipping.")
