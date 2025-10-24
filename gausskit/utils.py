@@ -5,31 +5,42 @@ from prompt_toolkit import prompt
 from prompt_toolkit.document import Document
 
 class MultiPathCompleter(Completer):
-    """Tab-complete comma-separated file paths without wiping earlier entries."""
-    def __init__(self, **kwargs):
-        self._inner = PathCompleter(expanduser=True, **kwargs)
+    """
+    Tab-complete file paths in a comma-separated list.
+    Only the fragment after the last comma is replaced.
+    """
+    def __init__(self, expanduser=True):
+        self.expanduser = expanduser
 
     def get_completions(self, document, complete_event):
         buf = document.text_before_cursor
+        frag = buf.rsplit(",", 1)[-1] if "," in buf else buf
 
-        if ',' not in buf:
-            # First token → normal path completion
-            yield from self._inner.get_completions(document, complete_event)
-            return
+        # keep spaces after the comma; complete only the trimmed token
+        token = frag.lstrip()
+        start_pos = -len(token)
 
-        # Find start index of the fragment to complete
-        last_comma = buf.rfind(',')
-        i = last_comma + 1
-        # keep spaces after comma
-        while i < len(buf) and buf[i].isspace():
-            i += 1
+        # Split the *unexpanded* token for reconstruction
+        token_dir, token_prefix = os.path.split(token)
 
-        fragment = buf[i:]                      # exact fragment under cursor
-        start_position = -(len(buf) - i)        # replace only this fragment
+        # Resolve real directory for listing
+        list_dir = token_dir or "."
+        if self.expanduser:
+            list_dir = os.path.expanduser(list_dir)
 
-        fake = Document(text=fragment, cursor_position=len(fragment))
-        for c in self._inner.get_completions(fake, complete_event):
-            yield Completion(text=c.text, start_position=start_position)
+        try:
+            entries = os.listdir(list_dir)
+        except OSError:
+            return  # nothing to complete
+
+        for name in entries:
+            if not name.startswith(token_prefix):
+                continue
+            suffix = "/" if os.path.isdir(os.path.join(list_dir, name)) else ""
+            # Recompose candidate using the original (unexpanded) dir part
+            candidate = os.path.join(token_dir, name) + suffix
+            yield Completion(candidate, start_position=start_pos)
+
 
 
 def rename_logs_from_inputs():
