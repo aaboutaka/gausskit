@@ -5,32 +5,27 @@ from prompt_toolkit import prompt
 from prompt_toolkit.document import Document
 
 class MultiPathCompleter(Completer):
-    def __init__(self, **kwargs):
-        self._inner = PathCompleter(expanduser=True, **kwargs)
+    def __init__(self):
+        self.path_completer = PathCompleter(expanduser=True)
     
     def get_completions(self, document, complete_event):
         text = document.text_before_cursor
-        if ',' in text:
-            # Split on comma to get everything after the last comma
-            prefix, last = text.rsplit(',', 1)
-            # Strip leading whitespace from the fragment
-            frag = last.lstrip()
-            
-            # Create a fake document with just the fragment
-            fake_doc = document.__class__(frag, cursor_position=len(frag))
-            
-            # Calculate how many characters back from cursor to start replacing
-            # This should be the length of the trimmed fragment that we're completing
-            start_pos = -len(frag)
-            
-            for c in self._inner.get_completions(fake_doc, complete_event):
-                # The completion's start_position is relative to the fake document
-                # We need to adjust it to be relative to the real cursor position
-                # c.start_position tells us how far back in 'frag' to replace
-                actual_start = start_pos + c.start_position
-                yield Completion(c.text, start_position=actual_start)
-        else:
-            yield from self._inner.get_completions(document, complete_event)
+        
+        # If no comma, just use regular path completion
+        if ',' not in text:
+            yield from self.path_completer.get_completions(document, complete_event)
+            return
+        
+        # Get the part after the last comma
+        after_comma = text.split(',')[-1]
+        current_part = after_comma.lstrip()
+        
+        # Create a temp document with just the current part
+        temp_doc = Document(current_part, len(current_part))
+        
+        # Get completions - PathCompleter's start_position already works!
+        for completion in self.path_completer.get_completions(temp_doc, complete_event):
+            yield completion
 
 
 
