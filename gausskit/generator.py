@@ -537,9 +537,21 @@ def create_benchmark_inputs():
             for basis in basis_sets:
                 basis_token = basis.strip()
                 basis_clean = clean_token(basis_token)
+            
+                # Detect if this is a numbered custom basis (e.g., gen1, genecp2)
+                if basis_clean.lower().startswith("genecp"):
+                    basis_in_route = "genecp"
+                elif basis_clean.lower().startswith("gen"):
+                    basis_in_route = "gen"
+                else:
+                    basis_in_route = basis_token
+            
+                # Build route line; sanitize keywords to avoid '# #p' duplication
+                kw = (keywords or "").strip()
+                if kw.startswith("#"):
+                    kw = kw.lstrip("#").lstrip("pP").lstrip()
+                route_line = f"#p {func_core}/{basis_in_route} {kw}".rstrip()
 
-                basis_lower     = basis_token.lower()
-                basis_in_route  = basis_lower if basis_lower in ("gen", "genecp") else basis_token
 
                 # Build route line; sanitize keywords to avoid '# #p' duplication
                 kw = (keywords or "").strip()
