@@ -2,31 +2,34 @@ import re, os, datetime, subprocess
 from prompt_toolkit.completion import Completer, PathCompleter, Completion, FuzzyCompleter, WordCompleter
 from prompt_toolkit import prompt
 
+from prompt_toolkit.document import Document
+
 class MultiPathCompleter(Completer):
-    """
-    Path completer that supports comma-separated multiple paths.
-    After each comma, only the last token is completed.
-    """
+    """Tab-complete comma-separated file paths without wiping earlier entries."""
     def __init__(self, **kwargs):
         self._inner = PathCompleter(expanduser=True, **kwargs)
 
     def get_completions(self, document, complete_event):
-        text = document.text_before_cursor
-        # Find the part after the final comma, if any
-        if "," in text:
-            last = text.split(",")[-1].lstrip()
-            # start_position relative to that last token only
-            start_pos = -len(last)
-            fake_doc = document.__class__(last, cursor_position=len(last))
-            for c in self._inner.get_completions(fake_doc, complete_event):
-                # Replace only the fragment typed after the last comma
-                yield Completion(c.text, start_position=start_pos)
-        else:
+        buf = document.text_before_cursor
+
+        if ',' not in buf:
+            # First token → normal path completion
             yield from self._inner.get_completions(document, complete_event)
+            return
 
+        # Find start index of the fragment to complete
+        last_comma = buf.rfind(',')
+        i = last_comma + 1
+        # keep spaces after comma
+        while i < len(buf) and buf[i].isspace():
+            i += 1
 
+        fragment = buf[i:]                      # exact fragment under cursor
+        start_position = -(len(buf) - i)        # replace only this fragment
 
-
+        fake = Document(text=fragment, cursor_position=len(fragment))
+        for c in self._inner.get_completions(fake, complete_event):
+            yield Completion(text=c.text, start_position=start_position)
 
 
 def rename_logs_from_inputs():
