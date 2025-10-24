@@ -2,40 +2,27 @@ import re, os, datetime, subprocess
 from prompt_toolkit.completion import Completer, PathCompleter, Completion, FuzzyCompleter, WordCompleter
 from prompt_toolkit import prompt
 
-
 class MultiPathCompleter(Completer):
     """
-    Like PathCompleter, but will complete *after* commas.
-    Splits the input on commas and only asks PathCompleter to complete
-    the last token, then replaces that token when you hit TAB.
+    Tab completion for comma-separated file paths.
+    After a comma, only the last token is completed.
     """
     def __init__(self, **kwargs):
-        # delegate everything to a normal PathCompleter
-        self._inner = PathCompleter(**kwargs)
+        self._inner = PathCompleter(expanduser=True, **kwargs)
 
     def get_completions(self, document, complete_event):
         text = document.text_before_cursor
-
         if ',' in text:
-            # split off everything up to the last comma
+            # isolate part after last comma
             prefix, last = text.rsplit(',', 1)
-            stripped = last.lstrip()
-            replace_len = len(last)
-
-            # make a fake document for just that last segment
-            class _Doc:
-                def __init__(self, txt):
-                    self.text_before_cursor = txt
-
-            fake = _Doc(stripped)
-            for c in self._inner.get_completions(fake, complete_event):
-                yield Completion(
-                    c.text,
-                    start_position=-replace_len
-                )
+            fragment = last.lstrip()
+            fake_doc = document.__class__(fragment, cursor_position=len(fragment))
+            for c in self._inner.get_completions(fake_doc, complete_event):
+                # only replace the fragment typed after the comma
+                yield Completion(c.text, start_position=-len(fragment))
         else:
-            # no commas yet — act just like PathCompleter
             yield from self._inner.get_completions(document, complete_event)
+
 
 
 
