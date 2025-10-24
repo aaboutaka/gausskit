@@ -1,31 +1,32 @@
 import re, os, datetime, subprocess
 from prompt_toolkit.completion import Completer, PathCompleter, Completion, FuzzyCompleter, WordCompleter
 from prompt_toolkit import prompt
+
+
 class MultiPathCompleter(Completer):
     """
-    Path completer that supports comma-separated multiple paths.
-    e.g. typing: file1.gbs, fi<TAB> → file1.gbs, file2.gbs
+    Enable tab completion for comma-separated paths.
+    Each comma-delimited segment is completed independently.
     """
     def __init__(self, **kwargs):
-        self.inner = PathCompleter(expanduser=True, **kwargs)
+        self._inner = PathCompleter(expanduser=True, **kwargs)
 
     def get_completions(self, document, complete_event):
         text = document.text_before_cursor
 
-        # Split the text on the last comma, if any
         if ',' in text:
-            prefix, last = text.rsplit(',', 1)
-            current = last.lstrip()
-            start_pos = -len(last)
+            # isolate the last segment after the final comma
+            _, last = text.rsplit(',', 1)
+            fragment = last.lstrip()
+            start_position = -len(fragment)
 
-            # Build a fake document for just that fragment
-            fake_doc = document.__class__(current, cursor_position=len(current))
-            for c in self.inner.get_completions(fake_doc, complete_event):
-                # Reconstruct full text with the prefix kept intact
-                completion_text = prefix + ', ' + c.text
-                yield Completion(completion_text, start_position=start_pos)
+            fake_doc = document.__class__(fragment, cursor_position=len(fragment))
+            for c in self._inner.get_completions(fake_doc, complete_event):
+                # only replace the fragment, not the whole line
+                yield Completion(c.text, start_position=start_position)
         else:
-            yield from self.inner.get_completions(document, complete_event)
+            yield from self._inner.get_completions(document, complete_event)
+
 
 
 
