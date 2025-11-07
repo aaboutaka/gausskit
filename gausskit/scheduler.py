@@ -624,14 +624,22 @@ class GaussianJobScheduler:
             print("✅ No .com without .log to submit.")
             return
 
-        # submit all at once
+        # submit with recheck - track what was actually submitted
+        submitted = []
         for b in todo:
+            # Recheck if log file appeared since initial scan
+            if os.path.exists(f"{b}.log"):
+                print(f"⏭️  Skipping {b} - log file now exists")
+                continue
             self.submit_job(b)
-
-        # then wait for all
-        checks = [(b, "Normal termination") for b in todo]
-        self.wait_for(f"{len(todo)} batch jobs", checks)
-
+            submitted.append(b)
+    
+        # wait only for jobs that were actually submitted
+        if submitted:
+            checks = [(b, "Normal termination") for b in submitted]
+            self.wait_for(f"{len(submitted)} batch jobs", checks)
+    
+    
         if self.email_notify:
             self.send_email()
 
