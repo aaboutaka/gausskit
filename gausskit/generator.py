@@ -322,7 +322,7 @@ def create_benchmark_inputs():
     # --- Preset lists ---------------------------------------------------------
     DFT_FUNCTIONALS = [
         # General Hybrid and GGA
-        'HF', 'BLYP', 'PBE', 'PBE0', 'TPSSh',
+        'HF', 'BLYP', 'PBEPBE', 'PBE1PBE', 'TPSSh',
         'B3LYP', 'B3P86', 'B3PW91', 'O3LYP',
         # Dispersion-Corrected
         'APFD', 'APF', 'wB97XD',
@@ -368,8 +368,8 @@ def create_benchmark_inputs():
         'daug-cc-pVDZ', 'daug-cc-pVTZ', 'spaug-cc-pVDZ', 'jul-cc-pVDZ',
         'Jun-cc-pVDZ', 'May-cc-pVDZ', 'Apr-cc-pVDZ',
         # Ahlrichs/Weigend def2 sets
-        'def2-SVP', 'def2-SVPP', 'def2-TZVP', 'def2-TZVPP',
-        'def2-QZVP', 'def2-QZVPP',
+        'def2SVP', 'def2SVPP', 'def2TZVP', 'def2TZVPP',
+        'def2QZVP', 'def2QZVPP',
         # ECP & pseudopotentials
         'LanL2MB', 'LanL2DZ', 'SDD', 'SDDAll',
         'CEP-4G', 'CEP-31G', 'CEP-121G',
@@ -397,7 +397,7 @@ def create_benchmark_inputs():
     functionals = [f.strip() for f in raw_funcs.split(",") if f.strip()]
 
     raw_basis_input = prompt(
-        "Enter basis set(s) (e.g. 6-31G, 6-31+G(d,p), def2-TZVP): ",
+        "Enter basis set(s) (e.g. 6-31G, 6-31+G(d,p), def2TZVP): ",
         completer=basis_completer
     ).strip()
     basis_sets = smart_split_basis_sets(raw_basis_input)
