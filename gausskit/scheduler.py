@@ -212,6 +212,27 @@ class GaussianJobScheduler:
                     if jobid and jobid.isdigit() and jobid not in {"0", "00"}:
                         self.submitted_jobs.append((input_base, jobid))
 
+                    # Create placeholder log file immediately to prevent duplicate submissions
+                    log_file = f"{input_base}.log"
+                    try:
+                        with open(log_file, 'w') as f:
+                            f.write("=" * 70 + "\n")
+                            f.write("PLACEHOLDER LOG FILE\n")
+                            f.write("=" * 70 + "\n")
+                            f.write(f"Job ID: {jobid}\n")
+                            f.write(f"Partition: {part}\n")
+                            f.write(f"Submitted: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                            f.write(f"Status: Queued/Running\n")
+                            f.write("\n")
+                            f.write("NOTE: This placeholder file was created immediately after job\n")
+                            f.write("      submission to prevent multiple scheduler instances from\n")
+                            f.write("      resubmitting the same job. This file will be OVERWRITTEN\n")
+                            f.write("      by Gaussian when the job starts running.\n")
+                            f.write("=" * 70 + "\n")
+                        print(f"📝 Created placeholder log file: {log_file}")
+                    except Exception as e:
+                        print(f"⚠️  Warning: Could not create placeholder log file: {e}")
+
                     return jobid
     
             if not self.wait_for_slot:
@@ -636,7 +657,7 @@ class GaussianJobScheduler:
     
         # wait only for jobs that were actually submitted
         if submitted:
-            checks = [(b, "Normal termination") for b in submitted]
+            checks = [(b, "termination") for b in submitted]
             self.wait_for(f"{len(submitted)} batch jobs", checks)
     
     
