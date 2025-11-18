@@ -1110,16 +1110,18 @@ def select_reference_file(files: List[Dict], ref_method: str,
     return files[0]
 
 
+
+
 def save_comparison_results_enhanced(all_results: List[Dict], 
                                      parsed_data: List[Dict],
                                      ignore_patterns: Dict[str, str]) -> None:
     """
-    Save comparison results to THREE separate Excel files with meaningful comparisons.
+    Save comparison results to THREE separate Excel files with different organizations.
     
     Creates:
     1. All_Data.xlsx - Single sheet with all results
-    2. By_System.xlsx - One sheet per system, organized by method
-    3. By_Method.xlsx - One sheet per functional+basis combination
+    2. By_System.xlsx - One sheet per system (molecule)
+    3. By_Functional.xlsx - One sheet per functional
     
     Parameters:
     ----------
@@ -1160,17 +1162,17 @@ def save_comparison_results_enhanced(all_results: List[Dict],
     try:
         with pd.ExcelWriter(excel_all, engine="xlsxwriter") as writer:
             df_all.to_excel(writer, sheet_name="All_Data", index=False)
-            _format_worksheet(writer, "All_Data", df_all)
+            _format_worksheet(writer, "All_Data")
         print(f"✅ Saved: {excel_all}")
     except Exception as e:
         print(f"⚠️  Error saving {excel_all}: {e}")
     
     # ========================================================================
-    # WORKBOOK 2: Organized by System with Method-specific ΔE
+    # WORKBOOK 2: Organized by System (Molecule)
     # ========================================================================
     excel_system = f"{base_name}_By_System.xlsx"
     try:
-        system_groups = _organize_by_system_with_methods(all_results, parsed_data)
+        system_groups = _organize_by_system(all_results, parsed_data)
         
         with pd.ExcelWriter(excel_system, engine="xlsxwriter") as writer:
             # Create a summary sheet first
@@ -1179,39 +1181,41 @@ def save_comparison_results_enhanced(all_results: List[Dict],
             # Create individual sheets for each system
             for system_name, system_data in system_groups.items():
                 df_system = pd.DataFrame(system_data)
+                # Recalculate ΔE relative to lowest in this system
+                df_system = _recalculate_delta_e(df_system)
                 
                 sheet_name = _sanitize_sheet_name(system_name)
                 df_system.to_excel(writer, sheet_name=sheet_name, index=False)
-                _format_worksheet(writer, sheet_name, df_system)
+                _format_worksheet(writer, sheet_name, include_system_col=False)
         
         print(f"✅ Saved: {excel_system} ({len(system_groups)} systems)")
     except Exception as e:
         print(f"⚠️  Error saving {excel_system}: {e}")
     
     # ========================================================================
-    # WORKBOOK 3: Organized by Method (Functional + Basis)
+    # WORKBOOK 3: Organized by Functional
     # ========================================================================
-    excel_method = f"{base_name}_By_Method.xlsx"
+    excel_functional = f"{base_name}_By_Functional.xlsx"
     try:
-        method_groups = _organize_by_method(all_results, parsed_data)
+        functional_groups = _organize_by_functional(all_results, parsed_data)
         
-        with pd.ExcelWriter(excel_method, engine="xlsxwriter") as writer:
+        with pd.ExcelWriter(excel_functional, engine="xlsxwriter") as writer:
             # Create a summary sheet first
-            _create_method_summary_sheet(writer, method_groups)
+            _create_functional_summary_sheet(writer, functional_groups)
             
-            # Create individual sheets for each method
-            for method_name, method_data in method_groups.items():
-                df_method = pd.DataFrame(method_data)
-                # Recalculate ΔE relative to lowest in this method
-                df_method = _recalculate_delta_e(df_method)
+            # Create individual sheets for each functional
+            for functional_name, functional_data in functional_groups.items():
+                df_functional = pd.DataFrame(functional_data)
+                # Recalculate ΔE relative to lowest in this functional
+                df_functional = _recalculate_delta_e(df_functional)
                 
-                sheet_name = _sanitize_sheet_name(method_name)
-                df_method.to_excel(writer, sheet_name=sheet_name, index=False)
-                _format_worksheet(writer, sheet_name, df_method)
+                sheet_name = _sanitize_sheet_name(functional_name)
+                df_functional.to_excel(writer, sheet_name=sheet_name, index=False)
+                _format_worksheet(writer, sheet_name, include_functional_col=False)
         
-        print(f"✅ Saved: {excel_method} ({len(method_groups)} methods)")
+        print(f"✅ Saved: {excel_functional} ({len(functional_groups)} functionals)")
     except Exception as e:
-        print(f"⚠️  Error saving {excel_method}: {e}")
+        print(f"⚠️  Error saving {excel_functional}: {e}")
     
     # ========================================================================
     # Also save CSV for compatibility
@@ -1224,21 +1228,14 @@ def save_comparison_results_enhanced(all_results: List[Dict],
     print("📁 Output Files Generated:")
     print(f"   1. {excel_all} - All data in one sheet")
     print(f"   2. {excel_system} - Organized by system")
-    print(f"   3. {excel_method} - Organized by method (functional+basis)")
+    print(f"   3. {excel_functional} - Organized by functional")
     print(f"   4. {csv_file} - CSV for data processing")
     print("="*80)
 
 
-
-
-
-def _organize_by_system_with_methods(all_results: List[Dict], 
-                                      parsed_data: List[Dict]) -> Dict[str, List[Dict]]:
+def _organize_by_system(all_results: List[Dict], parsed_data: List[Dict]) -> Dict[str, List[Dict]]:
     """
-    Organize results by system, with method-specific ΔE calculations.
-    
-    Within each system, ΔE is calculated separately for each functional+basis combination.
-    This ensures meaningful energy comparisons.
+    Organize results by system (molecule), grouping across functionals and basis sets.
     
     Parameters:
     ----------
@@ -1249,113 +1246,77 @@ def _organize_by_system_with_methods(all_results: List[Dict],
     
     Returns:
     -------
-    dict: System name -> list of results with method-specific ΔE
+    dict: System name -> list of results for that system
     """
-    from .utils import hartree_to_ev
-    
-    # Create a mapping from filename to metadata
-    filename_to_info = {}
+    # Create a mapping from filename to molecule
+    filename_to_molecule = {}
     for record in parsed_data:
-        filename_to_info[record['filename']] = {
-            'molecule': record.get('molecule', 'Unknown'),
-            'functional': record.get('functional', 'Unknown'),
-            'basis': record.get('basis', 'Unknown')
-        }
+        filename_to_molecule[record['filename']] = record.get('molecule', 'Unknown')
     
-    # Group by system first
+    # Group results by system
     system_groups = defaultdict(list)
     
     for result in all_results:
         filename = result['Filename']
-        info = filename_to_info.get(filename, {})
-        system = info.get('molecule', 'Unknown')
+        system = filename_to_molecule.get(filename, 'Unknown')
         
-        # Add metadata to result
+        # Add system and functional/basis info to result
         enhanced_result = result.copy()
-        enhanced_result['System'] = system
-        enhanced_result['Functional'] = info.get('functional', '')
-        enhanced_result['Basis'] = info.get('basis', '')
-        enhanced_result['Method'] = f"{info.get('functional', '')}_{info.get('basis', '')}"
+        
+        # Extract functional and basis from parsed_data
+        for record in parsed_data:
+            if record['filename'] == filename:
+                enhanced_result['System'] = system
+                enhanced_result['Functional'] = record.get('functional', '')
+                enhanced_result['Basis'] = record.get('basis', '')
+                break
         
         system_groups[system].append(enhanced_result)
-    
-    # Now recalculate ΔE within each system, separately for each method
-    for system_name, results in system_groups.items():
-        # Group by method within this system
-        method_groups = defaultdict(list)
-        for result in results:
-            method = result['Method']
-            method_groups[method].append(result)
-        
-        # Recalculate ΔE for each method group
-        updated_results = []
-        for method, method_results in method_groups.items():
-            # Find minimum energy for this method
-            min_energy = min(r['Energy (Hartree)'] for r in method_results)
-            
-            # Recalculate ΔE relative to this minimum
-            for result in method_results:
-                result['ΔE (Hartree)'] = result['Energy (Hartree)'] - min_energy
-                result['ΔE (eV)'] = hartree_to_ev(result['ΔE (Hartree)'])
-                updated_results.append(result)
-        
-        # Sort by method, then by ΔE
-        updated_results.sort(key=lambda x: (x['Method'], x['ΔE (eV)']))
-        system_groups[system_name] = updated_results
     
     return dict(system_groups)
 
 
-
-
-def _organize_by_method(all_results: List[Dict], 
-                        parsed_data: List[Dict]) -> Dict[str, List[Dict]]:
+def _organize_by_functional(all_results: List[Dict], parsed_data: List[Dict]) -> Dict[str, List[Dict]]:
     """
-    Organize results by METHOD (functional + basis combination).
-    
-    Each method sheet contains only calculations with the SAME functional AND basis set,
-    ensuring meaningful energy comparisons across systems.
+    Organize results by functional, grouping across systems and basis sets.
     
     Parameters:
     ----------
     all_results : list
         All comparison results
     parsed_data : list
-        Original parsed data with functional/basis information
+        Original parsed data with functional information
     
     Returns:
     -------
-    dict: Method name (functional_basis) -> list of results for that method
+    dict: Functional name -> list of results for that functional
     """
-    # Create a mapping from filename to metadata
+    # Create a mapping from filename to functional and system
     filename_to_info = {}
     for record in parsed_data:
         filename_to_info[record['filename']] = {
             'functional': record.get('functional', 'Unknown'),
-            'basis': record.get('basis', 'Unknown'),
-            'molecule': record.get('molecule', 'Unknown')
+            'molecule': record.get('molecule', 'Unknown'),
+            'basis': record.get('basis', 'Unknown')
         }
     
-    # Group results by method (functional + basis)
-    method_groups = defaultdict(list)
+    # Group results by functional
+    functional_groups = defaultdict(list)
     
     for result in all_results:
         filename = result['Filename']
         info = filename_to_info.get(filename, {})
-        
         functional = info.get('functional', 'Unknown')
-        basis = info.get('basis', 'Unknown')
-        method = f"{functional}_{basis}"
         
-        # Add metadata to result
+        # Add system and basis info to result
         enhanced_result = result.copy()
         enhanced_result['System'] = info.get('molecule', 'Unknown')
         enhanced_result['Functional'] = functional
-        enhanced_result['Basis'] = basis
+        enhanced_result['Basis'] = info.get('basis', 'Unknown')
         
-        method_groups[method].append(enhanced_result)
+        functional_groups[functional].append(enhanced_result)
     
-    return dict(method_groups)
+    return dict(functional_groups)
 
 
 def _recalculate_delta_e(df: pd.DataFrame) -> pd.DataFrame:
@@ -1392,7 +1353,7 @@ def _sanitize_sheet_name(name: str) -> str:
     
     Excel sheet names must:
     - Be 31 characters or less
-    - Not contain: \ / ? * [ ] :
+    -" Not contain: \ / ? * [ ] :"
     
     Parameters:
     ----------
@@ -1431,67 +1392,56 @@ def _create_system_summary_sheet(writer, system_groups: Dict[str, List[Dict]]):
     for system_name, system_data in system_groups.items():
         df = pd.DataFrame(system_data)
         
-        # Get unique methods
-        methods = set(d.get('Method', '') for d in system_data)
-        functionals = set(d.get('Functional', '') for d in system_data)
-        basis_sets = set(d.get('Basis', '') for d in system_data)
-        
         summary_data.append({
             'System': system_name,
             'Number of Files': len(system_data),
-            'Methods': ', '.join(sorted(methods)),
-            'Functionals': ', '.join(sorted(functionals)),
-            'Basis Sets': ', '.join(sorted(basis_sets)),
-            'Min Energy (Hartree)': df['Energy (Hartree)'].min() if 'Energy (Hartree)' in df.columns else 0
-        })
-    
-    df_summary = pd.DataFrame(summary_data)
-    df_summary.to_excel(writer, sheet_name="Summary", index=False)
-    _format_worksheet(writer, "Summary", df_summary, is_summary=True)
-
-
-def _create_method_summary_sheet(writer, method_groups: Dict[str, List[Dict]]):
-    """
-    Create a summary sheet for method-organized workbook.
-    
-    Parameters:
-    ----------
-    writer : ExcelWriter
-        The Excel writer object
-    method_groups : dict
-        Dictionary of method groups
-    """
-    summary_data = []
-    
-    for method_name, method_data in method_groups.items():
-        df = pd.DataFrame(method_data)
-        
-        # Parse method name
-        if '_' in method_name:
-            functional, basis = method_name.split('_', 1)
-        else:
-            functional, basis = method_name, 'Unknown'
-        
-        systems = set(d.get('System', '') for d in method_data)
-        
-        summary_data.append({
-            'Method': method_name,
-            'Functional': functional,
-            'Basis Set': basis,
-            'Number of Files': len(method_data),
-            'Systems Calculated': ', '.join(sorted(systems)),
+            'Functionals Used': ', '.join(sorted(set(d.get('Functional', '') for d in system_data))),
+            'Basis Sets Used': ', '.join(sorted(set(d.get('Basis', '') for d in system_data))),
             'Energy Range (eV)': df['ΔE (eV)'].max() - df['ΔE (eV)'].min() if 'ΔE (eV)' in df.columns else 0,
             'Min Energy (Hartree)': df['Energy (Hartree)'].min() if 'Energy (Hartree)' in df.columns else 0
         })
     
     df_summary = pd.DataFrame(summary_data)
     df_summary.to_excel(writer, sheet_name="Summary", index=False)
-    _format_worksheet(writer, "Summary", df_summary, is_summary=True)
+    _format_worksheet(writer, "Summary", is_summary=True)
 
 
-def _format_worksheet(writer, sheet_name: str, df: pd.DataFrame, is_summary: bool = False):
+def _create_functional_summary_sheet(writer, functional_groups: Dict[str, List[Dict]]):
     """
-    Apply formatting to an Excel worksheet based on its content.
+    Create a summary sheet for functional-organized workbook.
+    
+    Parameters:
+    ----------
+    writer : ExcelWriter
+        The Excel writer object
+    functional_groups : dict
+        Dictionary of functional groups
+    """
+    summary_data = []
+    
+    for functional_name, functional_data in functional_groups.items():
+        df = pd.DataFrame(functional_data)
+        
+        summary_data.append({
+            'Functional': functional_name,
+            'Number of Files': len(functional_data),
+            'Systems Calculated': ', '.join(sorted(set(d.get('System', '') for d in functional_data))),
+            'Basis Sets Used': ', '.join(sorted(set(d.get('Basis', '') for d in functional_data))),
+            'Energy Range (eV)': df['ΔE (eV)'].max() - df['ΔE (eV)'].min() if 'ΔE (eV)' in df.columns else 0,
+            'Min Energy (Hartree)': df['Energy (Hartree)'].min() if 'Energy (Hartree)' in df.columns else 0
+        })
+    
+    df_summary = pd.DataFrame(summary_data)
+    df_summary.to_excel(writer, sheet_name="Summary", index=False)
+    _format_worksheet(writer, "Summary", is_summary=True)
+
+
+def _format_worksheet(writer, sheet_name: str, 
+                     include_system_col: bool = True,
+                     include_functional_col: bool = True,
+                     is_summary: bool = False):
+    """
+    Apply formatting to an Excel worksheet.
     
     Parameters:
     ----------
@@ -1499,10 +1449,12 @@ def _format_worksheet(writer, sheet_name: str, df: pd.DataFrame, is_summary: boo
         The Excel writer object
     sheet_name : str
         Name of the sheet to format
-    df : DataFrame
-        The data in the sheet
+    include_system_col : bool
+        Whether to include system column in formatting
+    include_functional_col : bool
+        Whether to include functional column in formatting
     is_summary : bool
-        Whether this is a summary sheet
+        Whether this is a summary sheet (different formatting)
     """
     workbook = writer.book
     worksheet = writer.sheets[sheet_name]
@@ -1522,35 +1474,53 @@ def _format_worksheet(writer, sheet_name: str, df: pd.DataFrame, is_summary: boo
     # Set header format
     worksheet.set_row(0, None, header_format)
     
-    # Get column names
-    columns = df.columns.tolist()
-    
-    # Set column widths based on content
-    for idx, col in enumerate(columns):
-        if 'Filename' in col:
-            worksheet.set_column(idx, idx, 50)
-        elif col in ['System', 'Method', 'Methods']:
-            worksheet.set_column(idx, idx, 25)
-        elif col in ['Functional', 'Functionals']:
-            worksheet.set_column(idx, idx, 15)
-        elif col in ['Basis', 'Basis Set', 'Basis Sets']:
-            worksheet.set_column(idx, idx, 15)
-        elif col in ['Charge', 'Multiplicity']:
-            worksheet.set_column(idx, idx, 10)
-        elif 'Energy (Hartree)' in col or 'ΔE (Hartree)' in col or 'Min Energy' in col:
-            worksheet.set_column(idx, idx, 18, energy_format)
-        elif 'ΔE (eV)' in col or 'Energy Range' in col:
-            worksheet.set_column(idx, idx, 12, number_format)
-        elif '⟨S²⟩' in col or '(S²)' in col:
-            worksheet.set_column(idx, idx, 10, number_format)
-        elif 'Number of Files' in col:
-            worksheet.set_column(idx, idx, 15)
-        else:
-            worksheet.set_column(idx, idx, 30)
-
-
-
-
+    if is_summary:
+        # Summary sheet formatting
+        worksheet.set_column('A:A', 30)  # System/Functional name
+        worksheet.set_column('B:B', 15)  # Number of Files
+        worksheet.set_column('C:D', 40)  # Lists of methods/basis
+        worksheet.set_column('E:E', 18, number_format)  # Energy Range
+        worksheet.set_column('F:F', 20, energy_format)  # Min Energy
+    else:
+        # Data sheet formatting
+        col = 0
+        
+        # Filename
+        worksheet.set_column(col, col, 50)
+        col += 1
+        
+        # System (if included)
+        if include_system_col:
+            worksheet.set_column(col, col, 20)
+            col += 1
+        
+        # Functional (if included)
+        if include_functional_col:
+            worksheet.set_column(col, col, 15)
+            col += 1
+        
+        # Basis
+        worksheet.set_column(col, col, 15)
+        col += 1
+        
+        # Charge, Mult
+        worksheet.set_column(col, col + 1, 8)
+        col += 2
+        
+        # Energy (Hartree)
+        worksheet.set_column(col, col, 18, energy_format)
+        col += 1
+        
+        # ΔE (Hartree)
+        worksheet.set_column(col, col, 15, energy_format)
+        col += 1
+        
+        # ΔE (eV)
+        worksheet.set_column(col, col, 12, number_format)
+        col += 1
+        
+        # ⟨S²⟩
+        worksheet.set_column(col, col, 10, number_format)
 
 
 def perform_comparisons_enhanced(valid_groups: Dict[tuple, List[Dict]], 

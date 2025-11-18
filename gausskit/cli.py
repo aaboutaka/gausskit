@@ -7,6 +7,8 @@ from prompt_toolkit.completion import WordCompleter
 from gausskit.utils import HybridCompleter
 from gausskit.utils import MultiPathCompleter
 from .utils import prompt_and_submit
+from .regenerator import generate_regenerated_inputs
+
 
 
 from prompt_toolkit.completion import PathCompleter
@@ -325,6 +327,11 @@ def main():
             create_gaussian_input()
             return
 
+        if cmd in ("regen", "regenerate", "inputregen", "2.1"):
+            from gausskit.regenerator import generate_regenerated_inputs
+            generate_regenerated_inputs()
+            return
+
         if cmd in ("fc", "franck", "3"):
             generate_fc_input()
             return
@@ -343,7 +350,6 @@ def main():
             return
 
         if cmd in ("vibronic", "7"):
-            # remove the subcommand token so vib_main() sees only its flags/logfiles
             sys.argv.pop(1)
             from gausskit.vibronic import main as vib_main
             return vib_main()
@@ -352,37 +358,38 @@ def main():
             sys.argv.pop(1)
             from gausskit.generator import extract_xyz_cli
             return extract_xyz_cli()
-     
+
         if cmd in ("compare", "9"):
             sys.argv.pop(1)
             from .analyze import compare_log_energies
-            return compare_log_energies()
+            compare_log_energies()
+            return
 
         if cmd in ("handle", "10"):
             sys.argv.pop(1)
             from gausskit.error_fixer import batch_fix_and_report
-            return batch_fix_and_report() 
+            return batch_fix_and_report()
 
         if cmd in ("rename", "11"):
             sys.argv.pop(1)
             from gausskit.utils import rename_logs_from_inputs
             return rename_logs_from_inputs()
-    
+
         if cmd in ("scan", "12"):
             sys.argv.pop(1)
             from gausskit.generator import generate_zmatrix_scan_inputs
             return generate_zmatrix_scan_inputs()
-    
+
         if cmd in ("plotscan", "13"):
             sys.argv.pop(1)
             from .analyze import analyze_zmatrix_scan_logs
             analyze_zmatrix_scan_logs()
+            return
 
         if cmd in ("distort", "modes", "14"):
             sys.argv.pop(1)
             from gausskit.distort import run_distort_cli
             return run_distort_cli()
-
 
 
 
@@ -414,32 +421,44 @@ def main():
     import math
     from prompt_toolkit import prompt
     
-    print("=" * 70)
-    print("Welcome to GaussKit: Gaussian Input Automation Toolkit")
-    print("Author: Ali Abou Taka")
-    print("Type `gausskit --about` for full details.")
-    print("=" * 70)
+    print("""
+    ============================================================
+    Welcome to GaussKit: Gaussian Input Automation Toolkit
+    Author: Ali Abou Taka
+    Type `gausskit --about` for full details.
+    ============================================================
     
-    # Define menu choices
+    Choose mode:
+    
+    [0]  Exit                                [8]  Vibronic Summary Tool
+    [1]  PIMOM Swap                          [9]  Extract XYZ From Log files
+    [2]  Input Generator                     [10] Energy Comparison for Benchmark Logs
+    [3]  Batch Regenerate Inputs             [11] Error Handler
+    [4]  Franck–Condon Input Generator       [12] Rename log files
+    [5]  Job Scheduler                       [13] Scan Generator (Z-Matrix)
+    [6]  Benchmark Input Generator           [14] Analyze and plot Scan outputs
+    [7]  Log Analyzer CLI                    [15] Geometry Distorter (Vib Modes)
+    
+    """)
     choice_labels = [
         "[0] Exit",
         "[1] PIMOM Swap",
         "[2] Input Generator",
-        "[3] Franck–Condon Input Generator",
-        "[4] Job Scheduler",
-        "[5] Benchmark Input Generator",
-        "[6] Log Analyzer CLI",
-        "[7] Vibronic Summary Tool",
-        "[8] Extract XYZ From Log files",
-        "[9] Energy Comparison for Benchmark Logs",
-        "[10] Error Handler",
-        "[11] Rename log files",
-        "[12] Scan Generator (Z-Matrix)",
-        "[13] Analyze and plot Scan outputs",
-        "[14] Geometry Distorter (Vib Modes)"
-
+        "[3] Batch Regenerate Inputs",
+        "[4] Franck–Condon Input Generator",
+        "[5] Job Scheduler",
+        "[6] Benchmark Input Generator",
+        "[7] Log Analyzer CLI",
+        "[8] Vibronic Summary Tool",
+        "[9] Extract XYZ From Log files",
+        "[10] Energy Comparison for Benchmark Logs",
+        "[11] Error Handler",
+        "[12] Rename log files",
+        "[13] Scan Generator (Z-Matrix)",
+        "[14] Analyze and plot Scan outputs",
+        "[15] Geometry Distorter (Vib Modes)"
     ]
-    
+            
     # Determine number of rows for even layout (e.g., 10 per column)
     rows = math.ceil(len(choice_labels) / 2)
     
@@ -452,9 +471,9 @@ def main():
     col2 = choice_labels[rows:]
     
     # Print two cleanly aligned columns
-    print("Choose mode:\n")
-    for left, right in zip(col1, col2):
-        print(f"{left:<45}{right}")
+    #print("Choose mode:\n")
+    #for left, right in zip(col1, col2):
+    #    print(f"{left:<45}{right}")
     
     # Final prompt
     max_choice = len([c for c in choice_labels if c]) - 1  
@@ -490,43 +509,59 @@ def main():
     if choice == "0":
         print("Exiting GaussKit.")
         return
+
     elif choice == "1":
         from .cli import run_pimom_cli
         run_pimom_cli()
+
     elif choice == "2":
         create_gaussian_input()
+
     elif choice == "3":
-        generate_fc_input()
+        from gausskit.regenerator import generate_regenerated_inputs
+        generate_regenerated_inputs()
+
     elif choice == "4":
-        run_job_scheduler()
+        generate_fc_input()
+
     elif choice == "5":
-        create_benchmark_inputs()
+        run_job_scheduler()
+
     elif choice == "6":
-        run_log_analyzer()
+        create_benchmark_inputs()
+
     elif choice == "7":
+        run_log_analyzer()
+
+    elif choice == "8":
         from gausskit.vibronic import main as vib_main
         vib_main()
-    elif choice == "8":
+
+    elif choice == "9":
         from .generator import extract_xyz_cli as run_xyz_extractor
         run_xyz_extractor()
-    elif choice == "9":
+
+    elif choice == "10":
         from .analyze import compare_log_energies
         compare_log_energies()
-    elif choice == "10":  
+
+    elif choice == "11":
         from gausskit.error_fixer import batch_fix_and_report
         batch_fix_and_report()
-    elif choice == "11":
+
+    elif choice == "12":
         from .utils import rename_logs_from_inputs
         rename_logs_from_inputs()
-    elif choice == "12":
+
+    elif choice == "13":
         from .generator import generate_zmatrix_scan_inputs
         generate_zmatrix_scan_inputs()
 
-    elif choice == "13":
+    elif choice == "14":
         from .analyze import analyze_zmatrix_scan_logs
         analyze_zmatrix_scan_logs()
 
-    elif choice == "14":
+    elif choice == "15":
         from gausskit.distort import run_distort_cli
         run_distort_cli()
 
