@@ -327,71 +327,74 @@ def main():
             create_gaussian_input()
             return
 
-        if cmd in ("regen", "regenerate", "inputregen", "2.1"):
+        if cmd in ("regen", "regenerate", "inputregen", "3"):
             from gausskit.regenerator import generate_regenerated_inputs
             generate_regenerated_inputs()
             return
 
-        if cmd in ("fc", "franck", "3"):
+        if cmd in ("fc", "franck", "4"):
             generate_fc_input()
             return
 
-        if cmd in ("schedule", "scheduler", "4"):
+        if cmd in ("schedule", "scheduler", "5"):
             run_job_scheduler()
             return
 
-        if cmd in ("benchmark", "5"):
+        if cmd in ("benchmark", "6"):
             create_benchmark_inputs()
             return
 
-        if cmd in ("analyze", "6"):
+        if cmd in ("analyze", "7"):
             logfile = sys.argv[2] if len(sys.argv) > 2 else None
             run_log_analyzer(logfile)
             return
 
-        if cmd in ("vibronic", "7"):
+        if cmd in ("vibronic", "8"):
             sys.argv.pop(1)
             from gausskit.vibronic import main as vib_main
             return vib_main()
 
-        if cmd in ("extract", "8"):
+        if cmd in ("extract", "9"):
             sys.argv.pop(1)
             from gausskit.generator import extract_xyz_cli
             return extract_xyz_cli()
 
-        if cmd in ("compare", "9"):
+        if cmd in ("compare", "10"):
             sys.argv.pop(1)
             from .analyze import compare_log_energies
             compare_log_energies()
             return
 
-        if cmd in ("handle", "10"):
+        if cmd in ("handle", "11"):
             sys.argv.pop(1)
             from gausskit.error_fixer import batch_fix_and_report
             return batch_fix_and_report()
 
-        if cmd in ("rename", "11"):
+        if cmd in ("rename", "12"):
             sys.argv.pop(1)
             from gausskit.utils import rename_logs_from_inputs
             return rename_logs_from_inputs()
 
-        if cmd in ("scan", "12"):
+        if cmd in ("scan", "13"):
             sys.argv.pop(1)
             from gausskit.generator import generate_zmatrix_scan_inputs
             return generate_zmatrix_scan_inputs()
 
-        if cmd in ("plotscan", "13"):
+        if cmd in ("plotscan", "14"):
             sys.argv.pop(1)
             from .analyze import analyze_zmatrix_scan_logs
             analyze_zmatrix_scan_logs()
             return
 
-        if cmd in ("distort", "modes", "14"):
+        if cmd in ("distort", "modes", "15"):
             sys.argv.pop(1)
             from gausskit.distort import run_distort_cli
             return run_distort_cli()
 
-
+        if cmd in ("absorption", "16"):
+            sys.argv.pop(1)
+            from gausskit.analyze import plot_absorption_spectra 
+            return plot_absorption_spectra() 
 
         # Meta flags
         if cmd in ("--about", "about"):
@@ -430,7 +433,7 @@ def main():
     
     Choose mode:
     
-    [0]  Exit                                [8]  Vibronic Summary Tool
+    [0]  Exit                                
     [1]  PIMOM Swap                          [9]  Extract XYZ From Log files
     [2]  Input Generator                     [10] Energy Comparison for Benchmark Logs
     [3]  Batch Regenerate Inputs             [11] Error Handler
@@ -438,6 +441,7 @@ def main():
     [5]  Job Scheduler                       [13] Scan Generator (Z-Matrix)
     [6]  Benchmark Input Generator           [14] Analyze and plot Scan outputs
     [7]  Log Analyzer CLI                    [15] Geometry Distorter (Vib Modes)
+    [8]  Vibronic Summary Tool               [16] Absorption Spectra Plotter
     
     """)
     choice_labels = [
@@ -456,7 +460,8 @@ def main():
         "[12] Rename log files",
         "[13] Scan Generator (Z-Matrix)",
         "[14] Analyze and plot Scan outputs",
-        "[15] Geometry Distorter (Vib Modes)"
+        "[15] Geometry Distorter (Vib Modes)",
+        "[16] Absorption Spectra Plotter"
     ]
             
     # Determine number of rows for even layout (e.g., 10 per column)
@@ -564,6 +569,10 @@ def main():
     elif choice == "15":
         from gausskit.distort import run_distort_cli
         run_distort_cli()
+
+    elif choice == "16":                              
+        from .analyze import plot_absorption_spectra  
+        plot_absorption_spectra()                     
 
     
     else:

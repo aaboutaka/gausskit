@@ -1774,7 +1774,7 @@ def analyze_zmatrix_scan_logs():
     plt.title("ΔE vs Step Index")
     plt.grid(True)
     step_plot = os.path.join(scan_dir, f"{scan_name}_deltaE_vs_step.png")
-    plt.savefig(step_plot, dpi=300)
+    plt.savefig(step_plot, dpi=600)
     plt.close()
     print(f"📈 Step plot saved to {step_plot}")
 
@@ -1788,7 +1788,7 @@ def analyze_zmatrix_scan_logs():
         plt.title(f"Energy Scan vs {vcol}")
         plt.grid(True)
         out_plot = os.path.join(scan_dir, f"{scan_name}_plot.png")
-        plt.savefig(out_plot, dpi=300)
+        plt.savefig(out_plot, dpi=600)
         plt.close()
         print(f"📈 1D Plot saved to {out_plot}")
 
@@ -1804,7 +1804,7 @@ def analyze_zmatrix_scan_logs():
         plt.title("Heatmap of ΔE (eV)")
         plt.tight_layout()
         heatmap_file = os.path.join(scan_dir, f"{scan_name}_heatmap.png")
-        plt.savefig(heatmap_file, dpi=300)
+        plt.savefig(heatmap_file, dpi=600)
         plt.close()
         print(f"📊 Heatmap saved to {heatmap_file}")
 
@@ -1813,6 +1813,1080 @@ def analyze_zmatrix_scan_logs():
         print(f"\n⚠️ Skipped {len(skipped)} file(s):")
         for log, reason in skipped:
             print(f" - {log}: {reason}")
+
+def extract_absorption_data(logfile):
+    """
+    Extract TDDFT excitation data from a Gaussian log file.
+    
+    Returns:
+        List of tuples: [(wavelength_nm, energy_eV, oscillator_strength), ...]
+    """
+    excitations = []
+    
+    try:
+        with open(logfile, 'r', errors='ignore') as f:
+            for line in f:
+                # Match excited state lines from TDDFT output
+                # Example: "Excited State   1:      Singlet-A      3.5432 eV  349.88 nm  f=0.0234"
+                match = re.search(
+                    r'Excited State\s+\d+:\s+\S+\s+([\d.]+)\s+eV\s+([\d.]+)\s+nm\s+f=([\d.]+)',
+                    line
+                )
+                if match:
+                    energy_ev = float(match.group(1))
+                    wavelength_nm = float(match.group(2))
+                    osc_strength = float(match.group(3))
+                    excitations.append((wavelength_nm, energy_ev, osc_strength))
+    except Exception as e:
+        print(f"⚠️ Error reading {logfile}: {e}")
+        return []
+    
+    return excitations
+
+
+def gaussian_broadening(x, x0, intensity, fwhm):
+    """
+    Apply Gaussian broadening to a spectral line.
+    
+    Parameters:
+        x: array of x values (wavelength or energy)
+        x0: center position of the peak
+        intensity: peak intensity (oscillator strength)
+        fwhm: full width at half maximum
+    
+    Returns:
+        Array of y values
+    """
+    import numpy as np
+    sigma = fwhm / (2 * np.sqrt(2 * np.log(2)))
+    return intensity * np.exp(-((x - x0)**2) / (2 * sigma**2))
+
+def extract_absorption_data(logfile):
+    """
+    Extract TDDFT excitation data from a Gaussian log file.
+    
+    Returns:
+        List of tuples: [(wavelength_nm, energy_eV, oscillator_strength), ...]
+    """
+    excitations = []
+    
+    try:
+        with open(logfile, 'r', errors='ignore') as f:
+            for line in f:
+                # Match excited state lines from TDDFT output
+                # Example: "Excited State   1:      Singlet-A      3.5432 eV  349.88 nm  f=0.0234"
+                match = re.search(
+                    r'Excited State\s+\d+:\s+\S+\s+([\d.]+)\s+eV\s+([\d.]+)\s+nm\s+f=([\d.]+)',
+                    line
+                )
+                if match:
+                    energy_ev = float(match.group(1))
+                    wavelength_nm = float(match.group(2))
+                    osc_strength = float(match.group(3))
+                    excitations.append((wavelength_nm, energy_ev, osc_strength))
+    except Exception as e:
+        print(f"⚠️ Error reading {logfile}: {e}")
+        return []
+    
+    return excitations
+
+
+"""
+==============================================================================
+FUNCTION 2: gaussian_broadening() - NO CHANGES
+==============================================================================
+"""
+
+
+def gaussian_broadening(x, x0, intensity, fwhm):
+    """
+    Apply Gaussian broadening to a spectral line.
+    
+    Parameters:
+        x: array of x values (wavelength or energy)
+        x0: center position of the peak
+        intensity: peak intensity (oscillator strength)
+        fwhm: full width at half maximum
+    
+    Returns:
+        Array of y values
+    """
+    import numpy as np
+    sigma = fwhm / (2 * np.sqrt(2 * np.log(2)))
+    return intensity * np.exp(-((x - x0)**2) / (2 * sigma**2))
+
+
+"""
+==============================================================================
+FUNCTION 3: plot_absorption_spectra() - ⭐ COMPLETE FINAL VERSION ⭐
+==============================================================================
+"""
+def extract_absorption_data(logfile):
+    """
+    Extract TDDFT excitation data from a Gaussian log file.
+    
+    Returns:
+        List of tuples: [(wavelength_nm, energy_eV, oscillator_strength), ...]
+    """
+    excitations = []
+    
+    try:
+        with open(logfile, 'r', errors='ignore') as f:
+            for line in f:
+                # Match excited state lines from TDDFT output
+                # Example: "Excited State   1:      Singlet-A      3.5432 eV  349.88 nm  f=0.0234"
+                match = re.search(
+                    r'Excited State\s+\d+:\s+\S+\s+([\d.]+)\s+eV\s+([\d.]+)\s+nm\s+f=([\d.]+)',
+                    line
+                )
+                if match:
+                    energy_ev = float(match.group(1))
+                    wavelength_nm = float(match.group(2))
+                    osc_strength = float(match.group(3))
+                    excitations.append((wavelength_nm, energy_ev, osc_strength))
+    except Exception as e:
+        print(f"⚠️ Error reading {logfile}: {e}")
+        return []
+    
+    return excitations
+
+
+"""
+==============================================================================
+FUNCTION 2: gaussian_broadening() - NO CHANGES
+==============================================================================
+"""
+
+
+def gaussian_broadening(x, x0, intensity, fwhm):
+    """
+    Apply Gaussian broadening to a spectral line.
+    
+    Parameters:
+        x: array of x values (wavelength or energy)
+        x0: center position of the peak
+        intensity: peak intensity (oscillator strength)
+        fwhm: full width at half maximum
+    
+    Returns:
+        Array of y values
+    """
+    import numpy as np
+    sigma = fwhm / (2 * np.sqrt(2 * np.log(2)))
+    return intensity * np.exp(-((x - x0)**2) / (2 * sigma**2))
+
+
+def plot_absorption_spectra():
+    """
+    Plot UV-Vis absorption spectra from Gaussian TDDFT log files.
+    
+    Features:
+    - Interactive file selection with autocompletion
+    - Option to plot all log files in directory
+    - Gaussian broadening of spectral lines
+    - Stick spectra overlay (ALWAYS RED)
+    - Each spectrum has unique color
+    - Transition labels (S₁, S₂, S₃, etc.) on peaks
+    - Three labeling modes: highest only, all, or BOTH
+    - Normalization: none, normalized, or BOTH
+    - Grid plots with EVEN columns
+    - Generates plots WITH and WITHOUT labels
+    - Custom label naming with split count
+    - Publication-ready plots with external legend
+    
+    Outputs depend on options selected
+    """
+    import numpy as np
+    from math import ceil, sqrt
+    import re
+    
+    print("=" * 75)
+    print("📊 Absorption Spectra Plotter")
+    print("    - Extracts TDDFT excitation data from Gaussian log files")
+    print("    - Applies Gaussian broadening for smooth spectra")
+    print("    - Creates publication-ready plots")
+    print("=" * 75)
+    
+    # Ask user for file selection mode
+    mode = prompt(
+        "\nFile selection mode:\n"
+        "[1] Specify log files (with autocompletion)\n"
+        "[2] Plot all log files in current directory\n"
+        "Enter choice [1-2]: "
+    ).strip()
+    
+    log_files = []
+    
+    if mode == "2":
+        # Get all log files in current directory
+        all_logs = sorted([f for f in os.listdir('.') if f.endswith('.log')])
+        if not all_logs:
+            print("❌ No log files found in current directory.")
+            return
+        
+        print(f"\n✓ Found {len(all_logs)} log file(s):")
+        for i, f in enumerate(all_logs, 1):
+            print(f"  {i}. {f}")
+        
+        # Ask for confirmation
+        confirm = prompt("\nProceed with all files? [Y/n]: ").strip().lower()
+        if confirm and confirm not in ['y', 'yes', '']:
+            print("❌ Cancelled.")
+            return
+        
+        log_files = all_logs
+        
+    else:  # mode == "1" or default
+        # Interactive file selection with autocompletion
+        print("\nEnter log file names (comma-separated, Tab for autocompletion):")
+        print("Example: molecule1.log, molecule2.log")
+        
+        file_input = prompt("Log files: ", completer=MultiPathCompleter()).strip()
+        
+        if not file_input:
+            print("❌ No files specified.")
+            return
+        
+        # Parse comma-separated file list
+        log_files = [f.strip() for f in file_input.split(',') if f.strip()]
+        
+        # Validate files exist
+        invalid_files = [f for f in log_files if not os.path.exists(f)]
+        if invalid_files:
+            print(f"❌ File(s) not found: {', '.join(invalid_files)}")
+            return
+    
+    # =========================================================================
+    # CUSTOM LABEL NAMING
+    # =========================================================================
+    print("\n" + "=" * 75)
+    print("Label Naming Options")
+    print("=" * 75)
+    
+    # Show examples of how filenames can be split
+    print("\nExample filename splits (using '_' and '-' as delimiters):")
+    example_file = log_files[0]
+    base_name = os.path.splitext(example_file)[0]
+    
+    # Split on both _ and -
+    parts = re.split(r'[_-]', base_name)
+    
+    print(f"\nOriginal: {base_name}")
+    print(f"Split into {len(parts)} parts:")
+    for i, part in enumerate(parts, 1):
+        print(f"  [{i}] {part}")
+    
+    # Ask user how many parts to use
+    use_custom = prompt(
+        f"\nUse custom naming? [Y/n]: "
+    ).strip().lower()
+    
+    if use_custom and use_custom not in ['y', 'yes', '']:
+        # Use full filename
+        label_mapping = {f: os.path.splitext(f)[0] for f in log_files}
+    else:
+        # Custom naming
+        num_splits_input = prompt(
+            f"How many parts to use for labels? [1-{len(parts)}] (default: all): "
+        ).strip()
+        
+        if num_splits_input:
+            try:
+                num_splits = int(num_splits_input)
+                if num_splits < 1 or num_splits > len(parts):
+                    print(f"⚠️ Invalid number. Using all parts.")
+                    num_splits = len(parts)
+            except ValueError:
+                print(f"⚠️ Invalid input. Using all parts.")
+                num_splits = len(parts)
+        else:
+            num_splits = len(parts)
+        
+        # Generate labels for all files
+        label_mapping = {}
+        print("\nGenerated labels:")
+        for logfile in log_files:
+            base_name = os.path.splitext(logfile)[0]
+            parts = re.split(r'[_-]', base_name)
+            
+            if num_splits >= len(parts):
+                label = base_name
+            else:
+                label = '_'.join(parts[:num_splits])
+            
+            label_mapping[logfile] = label
+            print(f"  {logfile} → {label}")
+        
+        # Ask for confirmation
+        confirm_labels = prompt("\nProceed with these labels? [Y/n]: ").strip().lower()
+        if confirm_labels and confirm_labels not in ['y', 'yes', '']:
+            print("❌ Cancelled.")
+            return
+    
+    # Plotting parameters
+    print("\n" + "=" * 75)
+    print("Plotting Parameters")
+    print("=" * 75)
+    
+    # X-axis units
+    x_unit = prompt(
+        "X-axis units:\n"
+        "[1] Wavelength (nm)\n"
+        "[2] Energy (eV)\n"
+        "Enter choice [1-2] (default: 1): "
+    ).strip() or "1"
+    
+    use_wavelength = (x_unit == "1")
+    
+    # Broadening width
+    default_fwhm = "0.3" if not use_wavelength else "20"
+    unit_label = "eV" if not use_wavelength else "nm"
+    
+    fwhm_input = prompt(
+        f"Gaussian broadening FWHM (default: {default_fwhm} {unit_label}): "
+    ).strip()
+    
+    try:
+        fwhm = float(fwhm_input) if fwhm_input else float(default_fwhm)
+    except ValueError:
+        print(f"⚠️ Invalid FWHM value. Using default: {default_fwhm} {unit_label}")
+        fwhm = float(default_fwhm)
+    
+    # X-axis range
+    if use_wavelength:
+        default_range = "200,800"
+        range_label = "nm"
+    else:
+        default_range = "1.5,6.5"
+        range_label = "eV"
+    
+    range_input = prompt(
+        f"X-axis range (min,max) (default: {default_range} {range_label}): "
+    ).strip()
+    
+    try:
+        if range_input:
+            x_min, x_max = map(float, range_input.split(','))
+        else:
+            x_min, x_max = map(float, default_range.split(','))
+    except ValueError:
+        print(f"⚠️ Invalid range. Using default: {default_range} {range_label}")
+        x_min, x_max = map(float, default_range.split(','))
+    
+    # =========================================================================
+    # NORMALIZATION OPTIONS
+    # =========================================================================
+    print("\n" + "=" * 75)
+    print("Normalization Options")
+    print("=" * 75)
+    
+    print("\nSpectra normalization:")
+    print("  [1] No normalization (raw intensities)")
+    print("  [2] Normalize each spectrum to max = 1")
+    print("  [3] Generate both normalized and unnormalized versions")
+    
+    norm_mode = prompt("Enter choice [1-3] (default: 2): ").strip() or "2"
+    
+    generate_unnormalized = norm_mode in ["1", "3"]
+    generate_normalized = norm_mode in ["2", "3"]
+    
+    if norm_mode == "1":
+        print("✓ Will generate unnormalized plots only")
+    elif norm_mode == "2":
+        print("✓ Will generate normalized plots only")
+    else:
+        print("✓ Will generate both normalized and unnormalized plots")
+    
+    # =========================================================================
+    # LEGEND OPTIONS
+    # =========================================================================
+    print("\n" + "=" * 75)
+    print("Legend Options")
+    print("=" * 75)
+    
+    if len(log_files) > 1:
+        print("\nInclude legend in combined plots?")
+        print("  [Y] Yes - show legend")
+        print("  [N] No - hide legend (cleaner)")
+        
+        show_legend = prompt("Show legend? [y/N] (default: N): ").strip().lower()
+        show_legend = show_legend in ['y', 'yes']
+        
+        if show_legend:
+            print("✓ Legend will be shown in combined plots")
+        else:
+            print("✓ Legend will be hidden for cleaner plots")
+    else:
+        # Single file - no legend needed
+        show_legend = False
+    
+    # =========================================================================
+    # PEAK LABELING STRATEGY
+    # =========================================================================
+    print("\n" + "=" * 75)
+    print("Transition Labeling Options")
+    print("=" * 75)
+    
+    print("\nWhen multiple transitions overlap under one broad peak:")
+    print("  [1] Label only the highest peak (cleaner)")
+    print("  [2] Label all transitions (more detailed)")
+    print("  [3] Generate both versions (highest-only AND all-labels)")
+    
+    label_mode = prompt("Enter choice [1-3] (default: 1): ").strip() or "1"
+    
+    generate_highest_only = label_mode in ["1", "3"]
+    generate_all_labels = label_mode in ["2", "3"]
+    
+    if label_mode == "1":
+        print("✓ Will label only highest peaks")
+    elif label_mode == "2":
+        print("✓ Will label all transitions")
+    else:
+        print("✓ Will generate both labeling versions")
+    
+    # Extract data from all log files
+    print("\n" + "=" * 75)
+    print("Extracting Data")
+    print("=" * 75)
+    
+    all_spectra = {}
+    
+    for logfile in log_files:
+        excitations = extract_absorption_data(logfile)
+        
+        if not excitations:
+            print(f"⚠️ No TDDFT excitation data found in {logfile}")
+            continue
+        
+        print(f"✓ {logfile}: Found {len(excitations)} transitions")
+        
+        # Store data with custom label
+        label = label_mapping[logfile]
+        all_spectra[label] = {'excitations': excitations, 'original_file': logfile}
+    
+    if not all_spectra:
+        print("\n❌ No valid spectra data found in any file.")
+        return
+    
+    # Set up publication-quality plot style
+    plt.rcParams.update({
+        'font.size': 12,
+        'font.family': 'sans-serif',
+        'axes.labelsize': 14,
+        'axes.titlesize': 14,
+        'xtick.labelsize': 12,
+        'ytick.labelsize': 12,
+        'legend.fontsize': 11,
+        'figure.dpi': 100,
+        'savefig.dpi': 300,
+        'lines.linewidth': 2,
+        'axes.linewidth': 1.5,
+    })
+    
+    # Generate x-axis array
+    x = np.linspace(x_min, x_max, 2000)
+    
+    # Define extended color palette for unique colors per spectrum
+    n_spectra = len(all_spectra)
+    
+    if n_spectra <= 10:
+        colors = plt.cm.tab10(np.linspace(0, 1, 10))[:n_spectra]
+    elif n_spectra <= 20:
+        colors = plt.cm.tab20(np.linspace(0, 1, 20))[:n_spectra]
+    else:
+        # For >20 spectra: combine multiple colormaps
+        colors_list = []
+        colors_list.extend(plt.cm.tab20(np.linspace(0, 1, 20)))
+        colors_list.extend(plt.cm.Set3(np.linspace(0, 1, 12)))
+        colors_list.extend(plt.cm.Paired(np.linspace(0, 1, 12)))
+        colors_list.extend(plt.cm.Set2(np.linspace(0, 1, 8)))
+        colors_list.extend(plt.cm.Dark2(np.linspace(0, 1, 8)))
+        
+        # If still need more colors, cycle through with variations
+        while len(colors_list) < n_spectra:
+            # Add tab20 with alpha variation
+            colors_list.extend(plt.cm.tab20(np.linspace(0, 1, 20)))
+        
+        colors = np.array(colors_list[:n_spectra])
+    
+    # Store computed spectra for reuse
+    computed_spectra = {}
+    
+    # Compute all spectra
+    for idx, (label, data) in enumerate(all_spectra.items()):
+        excitations = data['excitations']
+        y = np.zeros_like(x)
+        
+        # Store stick spectrum data with transition indices
+        stick_data = []
+        
+        for trans_idx, (wavelength_nm, energy_ev, osc_strength) in enumerate(excitations, 1):
+            if use_wavelength:
+                x0 = wavelength_nm
+            else:
+                x0 = energy_ev
+            
+            # Add to stick spectrum with transition number
+            stick_data.append((x0, osc_strength, trans_idx))
+            
+            # Add broadened peak to spectrum
+            y += gaussian_broadening(x, x0, osc_strength, fwhm)
+        
+        computed_spectra[label] = {
+            'x': x, 
+            'y': y, 
+            'color': colors[idx],
+            'stick_data': stick_data,
+            'original_file': data['original_file']
+        }
+    
+    print("\n" + "=" * 75)
+    print("Generating Plots")
+    print("=" * 75)
+    
+    # Determine x-axis label
+    if use_wavelength:
+        xlabel = 'Wavelength (nm)'
+    else:
+        xlabel = 'Energy (eV)'
+    
+    output_files = []
+    
+    # Helper function to filter peaks for labeling
+    def filter_peaks_for_labeling(stick_data, y_broadened, label_all=False):
+        """Filter transitions to label with TIGHTER criteria for adjacent peaks."""
+        if label_all:
+            return stick_data
+        
+        from scipy.signal import find_peaks
+        
+        # IMPROVED: Stricter peak detection parameters
+        peaks_idx, properties = find_peaks(
+            y_broadened, 
+            height=np.max(y_broadened) * 0.05,      # Minimum 5% of max height
+            prominence=np.max(y_broadened) * 0.03,  # Must stand out by 3%
+            distance=int(fwhm * 1.5 / (x[1] - x[0]))  # Minimum 1.5× FWHM separation
+        )
+        
+        if len(peaks_idx) == 0:
+            return [max(stick_data, key=lambda x: x[1])]
+        
+        labeled_transitions = []
+        
+        # TIGHTER window for matching sticks to peaks
+        window = fwhm * 0.25  # Reduced from 0.5 for tighter matching
+        
+        for peak_idx in peaks_idx:
+            peak_x = x[peak_idx]
+            nearby_sticks = [s for s in stick_data if abs(s[0] - peak_x) <= window]
+            
+            if nearby_sticks:
+                highest = max(nearby_sticks, key=lambda s: s[1])
+                if highest not in labeled_transitions:
+                    labeled_transitions.append(highest)
+        
+        # Fallback: if no matches, label highest overall
+        if not labeled_transitions:
+            labeled_transitions = [max(stick_data, key=lambda x: x[1])]
+        
+        # ALWAYS INCLUDE S₁ (first excited state) regardless of intensity
+        s1_transition = None
+        for stick in stick_data:
+            if stick[2] == 1:  # trans_num == 1 is S₁
+                s1_transition = stick
+                break
+        
+        if s1_transition and s1_transition not in labeled_transitions:
+            labeled_transitions.append(s1_transition)
+        
+        return labeled_transitions
+    
+    # Helper function to add stick spectrum to axis
+    def add_stick_spectrum(ax, stick_data, y_broadened, show_labels=False, label_all=False, y_max=None):
+        """Add RED stick spectrum to axis with optional transition labels."""
+        # Draw all sticks in RED
+        for x_pos, height, trans_num in stick_data:
+            ax.plot([x_pos, x_pos], [0, height], 
+                   color='red', linewidth=1.5, alpha=0.6, zorder=1)
+        
+        # Add transition labels if requested
+        if show_labels:
+            transitions_to_label = filter_peaks_for_labeling(stick_data, y_broadened, label_all)
+            
+            # If labeling all peaks, detect overlapping labels and adjust
+            if label_all and len(transitions_to_label) > 5:
+                # Many labels - use smaller font and smart vertical offset
+                font_size = 7
+                
+                # Sort by x position
+                sorted_labels = sorted(transitions_to_label, key=lambda s: s[0])
+                
+                # Detect clusters and apply alternating vertical offsets
+                for idx, (x_pos, height, trans_num) in enumerate(sorted_labels):
+                    subscript_map = str.maketrans('0123456789', '₀₁₂₃₄₅₆₇₈₉')
+                    trans_label = f"S{str(trans_num).translate(subscript_map)}"
+                    
+                    # Check if close to previous label
+                    if idx > 0:
+                        prev_x = sorted_labels[idx-1][0]
+                        if abs(x_pos - prev_x) < fwhm * 0.15:  # Very close
+                            # Alternate between bottom and slightly higher
+                            if idx % 2 == 0:
+                                label_y = height * 0.95  # Lower
+                                va = 'top'
+                            else:
+                                label_y = height * 1.08  # Higher
+                                va = 'bottom'
+                        else:
+                            label_y = height * 1.05
+                            va = 'bottom'
+                    else:
+                        label_y = height * 1.05
+                        va = 'bottom'
+                    
+                    if y_max is not None:
+                        label_y = min(label_y, y_max * 0.98)
+                    
+                    ax.text(x_pos, label_y, trans_label, 
+                           ha='center', va=va, fontsize=font_size,
+                           color='darkred', fontweight='bold')
+            else:
+                # Few labels or highest-only mode - normal rendering
+                for x_pos, height, trans_num in transitions_to_label:
+                    subscript_map = str.maketrans('0123456789', '₀₁₂₃₄₅₆₇₈₉')
+                    trans_label = f"S{str(trans_num).translate(subscript_map)}"
+                    
+                    label_y = height * 1.05 if y_max is None else min(height * 1.05, y_max * 0.98)
+                    
+                    ax.text(x_pos, label_y, trans_label, 
+                           ha='center', va='bottom', fontsize=9,
+                           color='darkred', fontweight='bold')
+    
+    # Import scipy for peak detection
+    try:
+        from scipy.signal import find_peaks
+    except ImportError:
+        print("⚠️ scipy not installed. Installing for peak detection...")
+        import subprocess
+        subprocess.run(['pip', 'install', 'scipy', '--break-system-packages'], 
+                      capture_output=True)
+        from scipy.signal import find_peaks
+    
+    # Calculate grid dimensions with EVEN columns
+    def calculate_even_grid_dimensions(n_plots):
+        """Calculate grid dimensions ensuring even number of columns with balanced aspect ratio."""
+        if n_plots == 1:
+            return 1, 1
+        
+        # Try to find the most balanced even-column grid
+        # Target aspect ratio close to 4:5 or 3:4 (rows:cols)
+        best_layout = None
+        best_score = float('inf')
+        
+        # Try even column numbers from 2 to n_plots
+        for n_cols in range(2, n_plots + 1, 2):  # Only even numbers
+            n_rows = ceil(n_plots / n_cols)
+            
+            # Calculate how balanced this layout is
+            # Prefer layouts that are close to square but with even columns
+            aspect_ratio = n_rows / n_cols
+            empty_cells = (n_rows * n_cols) - n_plots
+            
+            # Score: prefer aspect ratio close to 1, minimize empty cells
+            score = abs(1.0 - aspect_ratio) * 2 + (empty_cells / n_plots) * 1
+            
+            if score < best_score:
+                best_score = score
+                best_layout = (n_rows, n_cols)
+        
+        return best_layout
+    
+    # Generate all combinations based on user choices
+    norm_options = []
+    if generate_unnormalized:
+        norm_options.append(('', False, 'Oscillator Strength'))  # (suffix, normalize, ylabel)
+    if generate_normalized:
+        norm_options.append(('_normalized', True, 'Normalized Intensity'))
+    
+    label_options = []
+    if generate_highest_only:
+        label_options.append(('', False))  # (suffix, label_all)
+    if generate_all_labels:
+        label_options.append(('_alllabels', True))
+    
+    # =========================================================================
+    # GENERATE INDIVIDUAL PLOTS (if more than one file)
+    # =========================================================================
+    if len(all_spectra) > 1:
+        print("\n📊 Creating individual plots...")
+        
+        plot_count = 0
+        for label, spectrum_data in computed_spectra.items():
+            for norm_suffix, normalize, ylabel_text in norm_options:
+                y_data = spectrum_data['y'] / np.max(spectrum_data['y']) if normalize else spectrum_data['y']
+                stick_data_plot = [(x, h / np.max(spectrum_data['y']) if normalize else h, n) 
+                                  for x, h, n in spectrum_data['stick_data']]
+                y_max = np.max(y_data)
+                
+                # Unlabeled version
+                fig, ax = plt.subplots(figsize=(8, 6))
+                add_stick_spectrum(ax, stick_data_plot, y_data, show_labels=False, y_max=y_max)
+                ax.plot(spectrum_data['x'], y_data, 
+                       color=spectrum_data['color'], linewidth=2, zorder=2)
+                ax.set_xlabel(xlabel, fontsize=14, fontweight='bold')
+                ax.set_ylabel(ylabel_text, fontsize=14, fontweight='bold')
+                ax.set_xlim(x_min, x_max)
+                ax.set_ylim(bottom=0, top=y_max * 1.1)
+                ax.set_title(label, fontsize=14, fontweight='bold')
+                ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+                try:
+                    plt.tight_layout()
+                except:
+                    pass  # Ignore tight_layout warnings
+                individual_file = f"{label}_spectrum{norm_suffix}.png"
+                plt.savefig(individual_file, dpi=300, bbox_inches='tight')
+                output_files.append(individual_file)
+                plt.close()
+                plot_count += 1
+                
+                # Labeled versions
+                for label_suffix, label_all in label_options:
+                    fig, ax = plt.subplots(figsize=(8, 6))
+                    add_stick_spectrum(ax, stick_data_plot, y_data, 
+                                     show_labels=True, label_all=label_all, y_max=y_max)
+                    ax.plot(spectrum_data['x'], y_data, 
+                           color=spectrum_data['color'], linewidth=2, zorder=2)
+                    ax.set_xlabel(xlabel, fontsize=14, fontweight='bold')
+                    ax.set_ylabel(ylabel_text, fontsize=14, fontweight='bold')
+                    ax.set_xlim(x_min, x_max)
+                    # More space for all-labels mode
+                    y_limit = y_max * 1.30 if label_all else y_max * 1.20
+                    ax.set_ylim(bottom=0, top=y_limit)
+                    ax.set_title(label, fontsize=14, fontweight='bold')
+                    ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+                    try:
+                        plt.tight_layout()
+                    except:
+                        pass  # Ignore tight_layout warnings
+                    individual_file_labeled = f"{label}_spectrum{norm_suffix}_labeled{label_suffix}.png"
+                    plt.savefig(individual_file_labeled, dpi=300, bbox_inches='tight')
+                    output_files.append(individual_file_labeled)
+                    plt.close()
+                    plot_count += 1
+        
+        print(f"   ✓ Created {plot_count} individual plot files")
+    
+    # =========================================================================
+    # GENERATE COMBINED PLOT (all spectra together)
+    # =========================================================================
+    print("\n📊 Creating combined plot...")
+    
+    combined_count = 0
+    for norm_suffix, normalize, ylabel_text in norm_options:
+        # Prepare normalized/unnormalized data
+        plot_data = {}
+        global_y_max = 0
+        for label, spectrum_data in computed_spectra.items():
+            y_data = spectrum_data['y'] / np.max(spectrum_data['y']) if normalize else spectrum_data['y']
+            stick_data_plot = [(x, h / np.max(spectrum_data['y']) if normalize else h, n) 
+                              for x, h, n in spectrum_data['stick_data']]
+            plot_data[label] = {'y': y_data, 'stick_data': stick_data_plot, 
+                               'color': spectrum_data['color'], 'x': spectrum_data['x']}
+            global_y_max = max(global_y_max, np.max(y_data))
+        
+        # Unlabeled version
+        n_spectra = len(plot_data)
+        # Calculate optimal legend columns based on number of spectra
+        legend_cols = min(8, max(5, n_spectra // 4))  # 5-8 columns
+        
+        # DYNAMIC figure size based on number of spectra and legend
+        if show_legend:
+            if n_spectra <= 10:
+                # Few spectra with legend below
+                fig_width = max(12, n_spectra * 1.2)
+                fig_height = 8
+            else:
+                # Many spectra with legend on right
+                fig_width = max(14, 12 + n_spectra * 0.15)  # Extra width for legend
+                fig_height = max(8, n_spectra * 0.3)  # Scale height with spectra
+        else:
+            # No legend - can use standard size
+            fig_width = 12
+            fig_height = 8
+        
+        fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+        for label, data in plot_data.items():
+            add_stick_spectrum(ax, data['stick_data'], data['y'], show_labels=False, y_max=global_y_max)
+        for label, data in plot_data.items():
+            ax.plot(data['x'], data['y'], label=label, color=data['color'], linewidth=2, zorder=2)
+        ax.set_xlabel(xlabel, fontsize=14, fontweight='bold')
+        ax.set_ylabel(ylabel_text, fontsize=14, fontweight='bold')
+        ax.set_xlim(x_min, x_max)
+        ax.set_ylim(bottom=0, top=global_y_max * 1.1)
+        ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+        
+        # Smart legend placement (if enabled)
+        if show_legend:
+            if n_spectra <= 10:
+                # Few spectra: legend below
+                ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.10), frameon=True, 
+                          fancybox=True, shadow=True, ncol=legend_cols, fontsize=9)
+                plt.tight_layout(rect=[0, 0.02, 1, 0.97])
+            else:
+                # Many spectra: legend on right with smaller font
+                ax.legend(loc='center left', bbox_to_anchor=(1.01, 0.5), frameon=True, 
+                          fancybox=True, shadow=True, ncol=1, fontsize=8)
+                plt.tight_layout(rect=[0, 0, 0.90, 1])
+        else:
+            # No legend - use full space
+            plt.tight_layout()
+        combined_file = f"absorption_spectra_combined{norm_suffix}.png"
+        counter = 1
+        while os.path.exists(combined_file):
+            combined_file = f"absorption_spectra_combined{norm_suffix}_{counter}.png"
+            counter += 1
+        plt.savefig(combined_file, dpi=300, bbox_inches='tight')
+        output_files.append(combined_file)
+        plt.close()
+        combined_count += 1
+        
+        # Labeled versions
+        for label_suffix, label_all in label_options:
+            n_spectra = len(plot_data)
+            legend_cols = min(8, max(5, n_spectra // 4))
+            
+            # DYNAMIC figure size based on number of spectra and legend
+            if show_legend:
+                if n_spectra <= 10:
+                    fig_width = max(12, n_spectra * 1.2)
+                    fig_height = 8
+                else:
+                    fig_width = max(14, 12 + n_spectra * 0.15)
+                    fig_height = max(8, n_spectra * 0.3)
+            else:
+                fig_width = 12
+                fig_height = 8
+            
+            fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+            for label, data in plot_data.items():
+                add_stick_spectrum(ax, data['stick_data'], data['y'], 
+                                 show_labels=True, label_all=label_all, y_max=global_y_max)
+            for label, data in plot_data.items():
+                ax.plot(data['x'], data['y'], label=label, color=data['color'], linewidth=2, zorder=2)
+            ax.set_xlabel(xlabel, fontsize=14, fontweight='bold')
+            ax.set_ylabel(ylabel_text, fontsize=14, fontweight='bold')
+            ax.set_xlim(x_min, x_max)
+            # More space for all-labels mode
+            y_limit = global_y_max * 1.30 if label_all else global_y_max * 1.20
+            ax.set_ylim(bottom=0, top=y_limit)
+            ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+            
+            # Smart legend placement (if enabled)
+            if show_legend:
+                if n_spectra <= 10:
+                    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.10), frameon=True, 
+                              fancybox=True, shadow=True, ncol=legend_cols, fontsize=9)
+                    plt.tight_layout(rect=[0, 0.02, 1, 0.97])
+                else:
+                    ax.legend(loc='center left', bbox_to_anchor=(1.01, 0.5), frameon=True, 
+                              fancybox=True, shadow=True, ncol=1, fontsize=8)
+                    plt.tight_layout(rect=[0, 0, 0.90, 1])
+            else:
+                # No legend - use full space
+                plt.tight_layout()
+            combined_file_labeled = combined_file.replace('.png', f'_labeled{label_suffix}.png')
+            plt.savefig(combined_file_labeled, dpi=300, bbox_inches='tight')
+            output_files.append(combined_file_labeled)
+            plt.close()
+            combined_count += 1
+    
+    print(f"   ✓ Created {combined_count} combined plot files")
+    
+    # =========================================================================
+    # GENERATE GRID PLOT (if more than one file)
+    # =========================================================================
+    if len(all_spectra) > 1:
+        print("\n📊 Creating grid view...")
+        
+        n_plots = len(all_spectra)
+        n_rows, n_cols = calculate_even_grid_dimensions(n_plots)
+        print(f"   Grid dimensions: {n_rows}×{n_cols} (even columns)")
+        
+        grid_count = 0
+        for norm_suffix, normalize, ylabel_text in norm_options:
+            # Prepare data
+            plot_data = {}
+            for label, spectrum_data in computed_spectra.items():
+                y_data = spectrum_data['y'] / np.max(spectrum_data['y']) if normalize else spectrum_data['y']
+                stick_data_plot = [(x, h / np.max(spectrum_data['y']) if normalize else h, n) 
+                                  for x, h, n in spectrum_data['stick_data']]
+                plot_data[label] = {'y': y_data, 'stick_data': stick_data_plot, 
+                                   'color': spectrum_data['color'], 'x': spectrum_data['x']}
+            
+            # Unlabeled version
+            fig, axes = plt.subplots(n_rows, n_cols, figsize=(6*n_cols, 5*n_rows))
+            if n_plots == 1:
+                axes = [axes]
+            else:
+                axes = axes.flatten()
+            
+            for idx, (label, data) in enumerate(plot_data.items()):
+                ax = axes[idx]
+                y_max = np.max(data['y'])
+                add_stick_spectrum(ax, data['stick_data'], data['y'], show_labels=False, y_max=y_max)
+                ax.plot(data['x'], data['y'], color=data['color'], linewidth=2, zorder=2)
+                ax.set_xlabel(xlabel, fontsize=12, fontweight='bold')
+                ax.set_ylabel(ylabel_text, fontsize=12, fontweight='bold')
+                ax.set_xlim(x_min, x_max)
+                ax.set_ylim(bottom=0, top=y_max * 1.1)
+                ax.set_title(label, fontsize=12, fontweight='bold')
+                ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+            
+            for idx in range(n_plots, len(axes)):
+                axes[idx].axis('off')
+            
+            plt.tight_layout()
+            grid_file = f"absorption_spectra_grid{norm_suffix}.png"
+            counter = 1
+            while os.path.exists(grid_file):
+                grid_file = f"absorption_spectra_grid{norm_suffix}_{counter}.png"
+                counter += 1
+            plt.savefig(grid_file, dpi=300, bbox_inches='tight')
+            output_files.append(grid_file)
+            plt.close()
+            grid_count += 1
+            
+            # Labeled versions
+            for label_suffix, label_all in label_options:
+                fig, axes = plt.subplots(n_rows, n_cols, figsize=(6*n_cols, 5*n_rows))
+                if n_plots == 1:
+                    axes = [axes]
+                else:
+                    axes = axes.flatten()
+                
+                for idx, (label, data) in enumerate(plot_data.items()):
+                    ax = axes[idx]
+                    y_max = np.max(data['y'])
+                    add_stick_spectrum(ax, data['stick_data'], data['y'], 
+                                     show_labels=True, label_all=label_all, y_max=y_max)
+                    ax.plot(data['x'], data['y'], color=data['color'], linewidth=2, zorder=2)
+                    ax.set_xlabel(xlabel, fontsize=12, fontweight='bold')
+                    ax.set_ylabel(ylabel_text, fontsize=12, fontweight='bold')
+                    ax.set_xlim(x_min, x_max)
+                    # More space for all-labels mode
+                    y_limit = y_max * 1.30 if label_all else y_max * 1.20
+                    ax.set_ylim(bottom=0, top=y_limit)
+                    ax.set_title(label, fontsize=12, fontweight='bold')
+                    ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+                
+                for idx in range(n_plots, len(axes)):
+                    axes[idx].axis('off')
+                
+                plt.tight_layout()
+                grid_file_labeled = grid_file.replace('.png', f'_labeled{label_suffix}.png')
+                plt.savefig(grid_file_labeled, dpi=300, bbox_inches='tight')
+                output_files.append(grid_file_labeled)
+                plt.close()
+                grid_count += 1
+        
+        print(f"   ✓ Created {grid_count} grid plot files ({n_rows}×{n_cols})")
+    
+    # =========================================================================
+    # SUMMARY
+    # =========================================================================
+    print("\n" + "=" * 75)
+    print(f"Output Files Created ({len(output_files)} total)")
+    print("=" * 75)
+    
+    for output_file in output_files:
+        print(f"✅ {output_file}")
+    
+    # Ask if user wants to display plots
+    display_options = "\nDisplay plots?\n"
+    option_num = 1
+    display_map = {}
+    
+    if len(all_spectra) == 1:
+        for norm_suffix, _, _ in norm_options:
+            display_map[str(option_num)] = ('combined', norm_suffix, '')
+            display_options += f"[{option_num}] Combined{' (normalized)' if norm_suffix else ''}\n"
+            option_num += 1
+            
+            for label_suffix, _ in label_options:
+                label_desc = ' (all labels)' if label_suffix else ' (highest only)'
+                display_map[str(option_num)] = ('combined', norm_suffix, label_suffix)
+                display_options += f"[{option_num}] Combined{' (normalized)' if norm_suffix else ''} - labeled{label_desc}\n"
+                option_num += 1
+    else:
+        for plot_type in ['combined', 'grid']:
+            for norm_suffix, _, _ in norm_options:
+                display_map[str(option_num)] = (plot_type, norm_suffix, '')
+                display_options += f"[{option_num}] {plot_type.title()}{' (normalized)' if norm_suffix else ''}\n"
+                option_num += 1
+                
+                for label_suffix, _ in label_options:
+                    label_desc = ' (all labels)' if label_suffix else ' (highest only)'
+                    display_map[str(option_num)] = (plot_type, norm_suffix, label_suffix)
+                    display_options += f"[{option_num}] {plot_type.title()}{' (normalized)' if norm_suffix else ''} - labeled{label_desc}\n"
+                    option_num += 1
+    
+    display_options += "[N] Don't show\nEnter choice: "
+    
+    show_plot = prompt(display_options).strip().lower()
+    
+    if show_plot in display_map:
+        from PIL import Image
+        plot_type, norm_suffix, label_suffix = display_map[show_plot]
+        
+        if plot_type == 'combined':
+            if label_suffix:
+                file_to_show = f"absorption_spectra_combined{norm_suffix}_labeled{label_suffix}.png"
+            else:
+                file_to_show = f"absorption_spectra_combined{norm_suffix}.png"
+        else:  # grid
+            if label_suffix:
+                file_to_show = f"absorption_spectra_grid{norm_suffix}_labeled{label_suffix}.png"
+            else:
+                file_to_show = f"absorption_spectra_grid{norm_suffix}.png"
+        
+        if os.path.exists(file_to_show):
+            img = Image.open(file_to_show)
+            plt.figure(figsize=(12, 8))
+            plt.imshow(img)
+            plt.axis('off')
+            plt.title(file_to_show, fontsize=14, fontweight='bold')
+            plt.tight_layout()
+            plt.show()
+    
+    # Save excitation data to CSV
+    save_csv = prompt("\nSave excitation data to CSV? [Y/n]: ").strip().lower()
+    if not save_csv or save_csv in ['y', 'yes']:
+        csv_file = "absorption_data.csv"
+        counter = 1
+        while os.path.exists(csv_file):
+            csv_file = f"absorption_data_{counter}.csv"
+            counter += 1
+        
+        with open(csv_file, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['Label', 'Original File', 'Transition', 'Wavelength (nm)', 'Energy (eV)', 'Oscillator Strength'])
+            
+            for label, data in all_spectra.items():
+                excitations = data['excitations']
+                original_file = data['original_file']
+                for i, (wl, en, osc) in enumerate(excitations, 1):
+                    writer.writerow([label, original_file, i, f'{wl:.2f}', f'{en:.4f}', f'{osc:.4f}'])
+        
+        print(f"✅ Excitation data saved to: {csv_file}")
+    
+    print("\n" + "=" * 75)
+    print("✨ Absorption spectra plotting complete!")
+    print("=" * 75)
+
+
+
+
+
 
 
 
