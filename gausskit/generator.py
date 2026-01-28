@@ -213,7 +213,7 @@ def create_gaussian_input():
     # Stage-1: Stability
     if add_old:
         # read geom+guess from chk; add chkbasis ONLY if reusing basis
-        route_stab1 = f"#p {base_mb} stable=opt guess=read geom=check"
+        route_stab1 = f"#p {base_mb} stable=opt guess=read geom=check scf=(novaracc,xqc,fermi) int=superfinegrid"
         if use_chkbasis:
             route_stab1 = _ensure_token(route_stab1, "chkbasis")
     else:
@@ -229,7 +229,7 @@ def create_gaussian_input():
     route_main = route_main.strip()
 
     # Stage-3: Stability again
-    route_stab2 = f"#p {method_token} stable=opt"
+    route_stab2 = f"#p {method_token} stable=opt scf=(novaracc,xqc,fermi) int=superfinegrid"
     for tok in ("guess=read", "geom=check"):
         route_stab2 = _ensure_token(route_stab2, tok)
     route_stab2 = _ensure_token(route_stab2, "scf=xqc")
